@@ -1,22 +1,28 @@
 %{
-int wordCount = 0;
+#include <stdio.h>
+#include <string.h>
+extern char* yylval;
 %}
 symbol [+\=\-\*\/\%]
-chars [A-za-z\_\']
+char [A-za-z\_]
+number [0-9]
 numbers ([0-9])+
 delim [" "\n\t]
 whitespace {delim}+
-words {chars}+
+variable [char]+[number]*[char]*[number]*
+type int|double
+end ;
 %%
-{words} { wordCount++;}
-{whitespace} {mian)}
+{type} {printf("type\n");}
+{variable} {printf("variable\n");}
+{end} {printf("end\n");}
+{whitespace} {}
 {numbers} {}
 {symbol} {}
 %%
 void main()
 {
 yylex(); 
-printf(" No of words:%d\n", wordCount);
 }
 int yywrap()
 {
