@@ -13,9 +13,7 @@ return VARIABLE;
 yylval.iValue = atoi(yytext);
 return INTEGER;
 }
-[-()<>==+*/;{}.] {
-return *yytext;	
-}
+[-()<>=+*/;{}.] {return *yytext;}
 ">=" return GE;
 "<=" return LE;
 "==" return EQ;
@@ -24,7 +22,7 @@ return *yytext;
 "if" return IF;
 "else" return ELSE;
 "print" return PRINT;
-[\t\n]+ ;
+[\t \n]+   ;
 .    yyerror("Unknown character");
 %%
 int yywrap(void){

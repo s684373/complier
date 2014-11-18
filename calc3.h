@@ -10,7 +10,7 @@ typedef struct{
 	int nops;
 	struct nodeTypeTag *op[1];
 }oprNodeType;
-typedef struct nodeType{
+typedef struct nodeTypeTag{
 	nodeEnum type;
 	union{
 		conNodeType con;
