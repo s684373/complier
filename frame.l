@@ -25,6 +25,7 @@ comma ,
 lbrackets \(
 rbrackets \)
 array {identifier}(\[{identifier}|{digits}\])+
+text \"(.)*\"
 %%
 {comments} {}
 {assign} {return ASSIGN};
@@ -72,6 +73,8 @@ array {identifier}(\[{identifier}|{digits}\])+
 			return POSITIVEINTEGER;}
 {identifier} {yylval = strdup(yytext);
 				return IDENTIFIER;}
+{text} {yylval = strdup(yytext);
+				return TEXT;}
 {whitespace} {}
 %%
 void main()
