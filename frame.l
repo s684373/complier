@@ -17,65 +17,60 @@ arraytype array" "of
 positiveinteger \(-{integerdigit}\)
 comments \/{2}(.)*\n
 relation ==|<|<=|>=|!=|and|or|xor
-op +|-|*|/|%
+op \+|\-|\*|\/|\%
 boolean yes|no
 assign =
 semicolon ;
 comma ,
 lbrackets \(
 rbrackets \)
-array {identifier}(\[{identifier}|{digits}\])+
+array {identifier}(\[{identifier}|{integerdigit}\])+
 text \"(.)*\"
 %%
 {comments} {}
-{assign} {return ASSIGN};
-{lbrackets} {return LBRACKETS;}
-{rbrackets} {return RBRACKETS;}
-{semicolon} {return SEMICOLON;}
-{comma} {return COMMA;}
-{relation} {yylval = strdup(yytext);
-				return RELATION;}
-{op} {yylval = strdup(yytext);
-				return OP;}
-"boolean" {return BOOLEAN;}
-"char" {return CHAR;}
-"class" {return CLASS;}
-"do" {return DO;}
-"else" {return ELSE;}
-"for" {return FOR;}
-"if" {return IF;}
-"integer" {return INTEGER;}
-"return" {return RETURN;}
-"while" {return WHILE;}
-"print" {return PRINT;}
-"program" {return PROGRAM;}
-"function" {return FUNCTION;}
-"var" {return VAR;}
-"is" {return IS;}
-"begin" {return BEGIN;}
-"then" {return THEN;}
-"end" {return END;}
-"elif" {return ELIF;}
-"type" {return TYPE;}
-"repeat" {return REPEAT;}
-"until" {return UNTIL;}
-"foreach" {return FOREACH;}
-"in" {return IN;}
-{classextent} {return CLASSEXTENT;}
-{arraytype} {return ARRAYTYPE;}
-{array} {yylval = strdup(yytext);
-				return ARRAY;}
-{boolean} {yylval = strdup(yytext);
-				return BOOLEANDIGIT;}
-{digits} {yylval = strdup(yytext)
-			return INTEGERDIGIT;}
-{positiveinteger} {yylval = strdup(yytext)
-			return POSITIVEINTEGER;}
-{identifier} {yylval = strdup(yytext);
-				return IDENTIFIER;}
-{text} {yylval = strdup(yytext);
-				return TEXT;}
-{whitespace} {}
+{whitespace} {printf("%s",strdup(yytext));}
+{assign} {printf("ASSIGN ");}
+{lbrackets} {printf("LBRACKETS ");}
+{rbrackets} {printf("RBRACKETS ");}
+{semicolon} {printf("SEMICOLON ");}
+{comma} {printf("COMMA ");}
+{relation} {printf("RELATION(%s)",strdup(yytext));}
+{op} {printf("OP(%s)",strdup(yytext));}
+"boolean" {printf("BOOLEAN");}
+"char" {printf("CHAR");}
+"class" {printf("CLASS");}
+"do" {printf("DO");}
+"else" {printf("ELSE");}
+"for" {printf("FOR");}
+"if" {printf("IF");}
+"integer" {printf("INTEGER");}
+"return(" {printf("RETURN");}
+"while" {printf("WHILE");}
+"print" {printf("PRINT");}
+"program" {printf("PROGRAM");}
+"function" {printf("FUNCTION");}
+"var" {printf("VAR");}
+"is" {printf("IS");}
+"begin" {printf("BEGIN");}
+"then" {printf("THEN");}
+"end" {printf("END");}
+"elif" {printf("ELIF");}
+"type" {printf("TYPE");}
+"repeat" {printf("REPEAT");}
+"until" {printf("UNTIL");}
+"foreach" {printf("FOREACH");}
+"in" {printf("IN");}
+{classextent} {printf("CLASSEXTENT");}
+{arraytype} {printf("ARRAYTYPE");}
+{array} {printf("ARRAY(%s) ",strdup(yytext));}
+{boolean} {printf("BOOLEANDIGIT(%s) ",strdup(yytext));}
+{integerdigit} {
+			printf("INTEGERDIGIT(%s) ",strdup(yytext));}
+{positiveinteger} {
+			printf("POSITIVEINTEGER(%s) ",strdup(yytext));}
+{identifier} {printf("IDENTIFIER(%s) ",strdup(yytext));}
+{text} {printf("TEXT(%s) ",strdup(yytext));}
+.	{printf("cannot be parsed ");}
 %%
 void main()
 {
