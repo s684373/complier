@@ -5,7 +5,7 @@ int ex(nodeType *p){
 	if(!p)return 0;
 	switch(p->type ) {
 		case typeCon: return p->con.value;
-		case typeId:  return sym[p->id.i];
+		case typeId:  return symi[p->id.i];
 		case typeOpr:
 			switch(p->opr.oper){
 				case WHILE:while(ex(p->opr.op[0])) ex(p->opr.op[1]);
@@ -14,9 +14,18 @@ int ex(nodeType *p){
 						else if(p->opr.nops > 2) ex(p->opr.op[2]);
 						return 0;
 				case PRINT: printf("%d\n",ex(p->opr.op[0]));
+				case IS:if(p->opr.op[1]->id.i==1)  
+							return symi[p->opr.op[0]->id.i] = ~0;
+
+
 				case ';':ex(p->opr.op[0]);
 							return ex(p->opr.op[1]);
-				case '=': return sym[p->opr.op[0]->id.i] = ex(p->opr.op[1]);
+				case '=':if(symi[p->opr.op[0]->id.i] == ~0) 
+							return symi[p->opr.op[0]->id.i] = ex(p->opr.op[1]);
+						else{
+							printf("no declearation!\n");
+							return;
+						}
 				case UMINUS:return -ex(p->opr.op[0]);
 				case '+':  return ex(p->opr.op[0] )+ ex(p->opr.op[1]);
 				case '-':  return ex(p->opr.op[0] )- ex(p->opr.op[1]);

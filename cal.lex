@@ -5,8 +5,14 @@
 void yyerror(char *);
 %}
 %%
-[a-z] {
-yylval.sIndex = *yytext - 'a';
+"var" return VAR;
+"is" return IS;
+"while"	return WHILE;
+"if" return IF;
+"else" return ELSE;
+"print" return PRINT;
+[a-z]+ {
+yylval.sIndex = strdup(yytext);
 return VARIABLE;	
 }
 [0-9]+ {
@@ -18,10 +24,7 @@ return INTEGER;
 "<=" return LE;
 "==" return EQ;
 "!=" return NE;
-"while"	return WHILE;
-"if" return IF;
-"else" return ELSE;
-"print" return PRINT;
+
 [\t \n]+   ;
 .    yyerror("Unknown character");
 %%

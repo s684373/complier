@@ -4,21 +4,24 @@
 #include <stdarg.h>
 #include "calc3.h"
 nodeType *opr(int oper,int nops,...);
-nodeType *id(int i);
+nodeType *id(char *s);
 nodeType *con(int value);
+unsigned int BKDRHash(char *str);
 void freeNode(nodeType *p);
 int ex(nodeType *p);
 int yylex(void);
 void yyerror(char *s);
-int sym[26];
+int symi[1000];
+int symb[1000];
 %}
 %union{
 	int iValue;
-	char sIndex;
+	char *sIndex;
 	struct nodeType *nPtr;
 };
 %token <iValue>INTEGER
 %token <sIndex>VARIABLE
+%token VAR IS
 %token WHILE IF PRINT
 %nonassoc IFX
 %nonassoc ELSE
@@ -39,6 +42,7 @@ stmt:
 	';'     				{$$ = opr(';',2,NULL,NULL);}
 	|expr';'				{$$ = $1}
 	|PRINT expr';'  		{$$ = opr(PRINT,1,$2);}
+	|VAR VARIABLE IS VARIABLE {$$ = opr(IS,2,id($2),id($4));}
 	|VARIABLE'='expr';'		{$$ = opr('=',2,id($1),$3);}
 	|WHILE'('expr')'stmt	{$$ = opr(WHILE,2,$3,$5);}
 	|IF'('expr')'stmt%prec IFX {$$ = opr(IF,2,$3,$5);}
@@ -77,9 +81,12 @@ nodeType *con(int value){
     return p;
 }
 
-nodeType *id(int i){ 
+nodeType *id(char *s){ 
     nodeType *p;
     size_t nodeSize;
+    int i = BKDRHash(s);
+    if(strcmp(s,"interger")==0)i = 1;
+    if(strcmp(s,"boolean")==0)i = 2;
     nodeSize = sizeof(nodeType*) + sizeof(idNodeType);
     if((p = malloc(nodeSize)) == NULL)
     	yyerror("out of memory");
@@ -117,6 +124,19 @@ void freeNode(nodeType *p) {
 	}
 	free(p);
 } 
+
+unsigned int BKDRHash(char *str)
+{
+    unsigned int seed = 1; // 31 131 1313 13131 131313 etc..
+    unsigned int hash = 0;
+ 	
+    while (*str)
+    {
+        hash = hash * seed + (*str++);
+    }
+ 
+    return (hash & 0x7FFFFFFF);
+}
 
 
 

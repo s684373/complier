@@ -7,7 +7,7 @@ int del = 1;
 int eps = 3;
 
 void graphInit(void);
-void graphFinish(void);
+void graphFinish();
 void graphBox(char *s,int *w,int *h);
 void graphDrawBox(char *s,int c,int l);
 void graphDrawArrow(int c1,int ll,int c2,int l2);
@@ -61,8 +61,9 @@ void exNode(nodeType *p,int c,int l,int *ce,int *cm){
 	cbar = c;
 	*ce = c + w;
 	*cm = c + w/2;
+	/*node is leaf*/
 	if(p->type == typeCon || p->type == typeId ||p->opr.nops == 0){
-		graphDrawBox(s,cbar,1);
+		graphDrawBox(s,cbar,l);
 		return;
 	}
 	cs = c;
@@ -114,8 +115,8 @@ void graphFinish(){
 	for(i = 0;i<lmax;i++){
 		for(j = cmax-1;j>0 &&graph[i][j]==' ';j--);
 		graph[i][cmax-1] = 0;
-	if(j < cmax -1)graph[i][j+1] = 0;
-	if(graph[i][j]==' ')graph[i][j]=0;
+		if(j < cmax -1)graph[i][j+1] = 0;
+		if(graph[i][j]==' ')graph[i][j]=0;
 	}
 	for(i=lmax-1;i>0&&graph[i][0]==0;i--);
 	printf("\n\nGraph%d:\n",graphNumber++);
@@ -130,7 +131,7 @@ void graphBox(char *s,int *w,int *h){
 
 void graphDrawBox(char *s,int c,int l){
 	int i;
-	graphTest(l,c+strlen(s)-l+del);
+	graphTest(l,c+strlen(s)-1+del);
 	for(i=0;i<strlen(s);i++){
 		graph[l][c+i+del] = s[i];
 	}

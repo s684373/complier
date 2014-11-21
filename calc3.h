@@ -18,4 +18,5 @@ typedef struct nodeTypeTag{
 		oprNodeType opr;
 	};
 }nodeType;
-extern int sym[26];
+extern int symi[1000];
+extern int symb[1000];
