@@ -16,14 +16,15 @@ classextent class" "extends
 arraytype array" "of
 positiveinteger \(-{integerdigit}\)
 comments \/{2}(.)*\n
-relation ==|<|<=|>=|!=|and|or|xor
+relation ==|<|<=|>=|!=|and|or|xor|>|<
 op \+|\-|\*|\/|\%
 boolean yes|no
-assign =
+assign :=
 semicolon ;
 comma ,
 lbrackets \(
 rbrackets \)
+point \.
 array {identifier}(\[{identifier}|{integerdigit}\])+
 text \"(.)*\"
 %%
@@ -33,6 +34,7 @@ text \"(.)*\"
 {lbrackets} {printf("LBRACKETS ");}
 {rbrackets} {printf("RBRACKETS ");}
 {semicolon} {printf("SEMICOLON ");}
+{point} {printf("POINT ");}
 {comma} {printf("COMMA ");}
 {relation} {printf("RELATION(%s)",strdup(yytext));}
 {op} {printf("OP(%s)",strdup(yytext));}
@@ -44,7 +46,7 @@ text \"(.)*\"
 "for" {printf("FOR");}
 "if" {printf("IF");}
 "integer" {printf("INTEGER");}
-"return(" {printf("RETURN");}
+"return" {printf("RETURN");}
 "while" {printf("WHILE");}
 "print" {printf("PRINT");}
 "program" {printf("PROGRAM");}

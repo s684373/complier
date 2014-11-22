@@ -16,11 +16,12 @@ classextent class" "extends
 arraytype array" "of
 positiveinteger \(-{integerdigit}\)
 comments \/{2}(.)*\n
-relation ==|<|<=|>=|!=|and|or|xor
+relation ==|<|<=|>=|!=|and|or|xor|<|>
 op \+|\-|\*|\/|\%
 boolean yes|no
-assign =
+assign :=
 semicolon ;
+point \.
 comma ,
 lbrackets \(
 rbrackets \)
@@ -32,6 +33,7 @@ text \"(.)*\"
 {assign} {return ASSIGN};
 {lbrackets} {return LBRACKETS;}
 {rbrackets} {return RBRACKETS;}
+{point} {return POINT;}
 {semicolon} {return SEMICOLON;}
 {comma} {return COMMA;}
 {relation} {yylval = strdup(yytext);
