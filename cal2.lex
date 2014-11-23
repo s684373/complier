@@ -1,14 +1,14 @@
 %{
 #include <stdlib.h>
 #include "calc3.h"
-#include "cal.tab.h"
+#include "cal2.tab.h"
 void yyerror(char *);
 %}
 comments \/{2}(.)*\n
 %%
 {comments} {}
 ":=" return ASIGN;
-"program" return PROGRAM;
+"program example()"   ;
 "class" return CLASS;
 "type" return TYPE;
 "extends" return EXTENDS;

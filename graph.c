@@ -35,25 +35,37 @@ void exNode(nodeType *p,int c,int l,int *ce,int *cm){
 	s = word;
 	switch(p->type){
 		case typeCon:sprintf(word,"c(%d)",p->con.value);break;
-		case typeId:sprintf(word,"id(%c)",p->id.i+'A');break;
+		case typeId:sprintf(word,"id(%s)",p->id.s);break;
 		case typeOpr:
 			switch(p->opr.oper){
+				case PROGRAM:s = "program";break;
 				case WHILE: s = "while";break;
+				case REPEAT:s = "repeat";break;
+				case FOREACH:s = "foreach";break;
+				case CLASS: s = "class";break;
+				case EXTENDS: s = "extends";break;
 				case IF: s = "if";break;
+				case VAR: s = "var";break;
+				case ARRAY: s = "array";break;
+				case RETURN: s = "return";break;
+				case FUNCTION: s = "function";break;
 				case PRINT:s = "print";break;
 				case ';':s = "[;]";break;
-				case '=':s = "[=]";break;
+				case ASIGN:s = "[:=]";break;
 				case UMINUS:s = "[_]";break;
 				case '+':s = "[+]";break;
 				case '-':s = "[-]";break;
 				case '*':s = "[*]";break;
 				case '/':s = "[/]";break;
+				case '%':s = "[%]";break;
 				case '<':s = "[<]";break;
 				case '>':s = "[>]";break;
 				case GE:s = "[>=]";break;
 				case LE:s = "[<=]";break;
 				case NE:s = "[!=]";break;
 				case EQ:s = "[==]";break;
+				case AND:s = "[AND]";break;
+				case OR :s = "[OR]";break;
 			}
 			break;
 	}
@@ -85,8 +97,8 @@ void exNode(nodeType *p,int c,int l,int *ce,int *cm){
 	}
 }
 
-#define lmax 200
-#define cmax 200
+#define lmax 2000
+#define cmax 2000
 char graph[lmax][cmax];
 int graphNumber = 0;
 void graphTest(int l,int c){
@@ -121,7 +133,7 @@ void graphFinish(){
 	for(i=lmax-1;i>0&&graph[i][0]==0;i--);
 	printf("\n\nGraph%d:\n",graphNumber++);
 	for(j = 0;j<=i;j++)printf("\n%s",graph[j]);
-	printf("'\n");
+	printf("\n");
 }
 
 void graphBox(char *s,int *w,int *h){

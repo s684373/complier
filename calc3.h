@@ -4,6 +4,7 @@ typedef struct{
 }conNodeType;
 typedef struct{
 	int i;
+	char *s;
 }idNodeType;
 typedef struct{
 	int oper;
