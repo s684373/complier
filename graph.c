@@ -51,7 +51,9 @@ void exNode(nodeType *p,int c,int l,int *ce,int *cm){
 				case FUNCTION: s = "function";break;
 				case PRINT:s = "print";break;
 				case ';':s = "[;]";break;
+				case ',':s = "[,]";break;
 				case ASIGN:s = "[:=]";break;
+				case ARRAYASIGN:s = "[:=]";break;
 				case UMINUS:s = "[_]";break;
 				case '+':s = "[+]";break;
 				case '-':s = "[-]";break;

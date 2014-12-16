@@ -21,7 +21,7 @@ int symb[1000];
 };
 %token <iValue>INTEGER
 %token <sIndex>VARIABLE
-%token ASIGN
+%token ASIGN ARRAYASIGN
 %token FUNCTION END ARRAY TYPE OF RETURN  CLASS EXTENDS CLASSFUN PROGRAM
 %token VAR IS BEGINNING
 %token WHILE IF PRINT DO ELIF THEN REPEAT UNTIL FOREACH IN
@@ -33,7 +33,7 @@ int symb[1000];
 %left '+' '-' 
 %left '*' '/' '%'
 %nonassoc UMINUS
-%type<nPtr> stmt expr stmt_list
+%type<nPtr> stmt optparams params expr stmt_list 
 %%
 program:
 	function   {exit(0);}
@@ -49,20 +49,26 @@ stmt:
   |PROGRAM VARIABLE'('')'stmt_list IS stmt_list BEGINNING stmt_list END {$$ = opr(PROGRAM,3,id($2),$7,$9);}
   |TYPE VARIABLE IS CLASS stmt_list END CLASS';'    {$$ = opr(CLASS,2,id($2),$5);}
   |TYPE VARIABLE IS CLASS EXTENDS VARIABLE stmt_list END CLASS';'    {$$ = opr(EXTENDS,3,id($2),id($6),$7);}
-  |FUNCTION VARIABLE'('VARIABLE')'stmt_list IS stmt_list BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,5,id($2),id($4),$6,$8,$10);}
-  |FUNCTION VARIABLE'('VARIABLE')'stmt_list IS BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,4,id($2),id($4),$6,$9);}
-  |FUNCTION VARIABLE'('VARIABLE','VARIABLE')'stmt_list IS BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,5,id($2),id($4),id($6),$8,$11);}
+  |FUNCTION VARIABLE'('')'stmt_list IS stmt_list BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,4,$2,$5,$7,$9);}
+  |FUNCTION VARIABLE'('')'IS BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,2,$2,$7);}
+  |FUNCTION VARIABLE'('')'stmt_list IS BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,3,$2,$5,$8);}
+  |FUNCTION VARIABLE'('optparams')'stmt_list IS stmt_list BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,5,id($2),$4,$6,$8,$10);}
+  |FUNCTION VARIABLE'('optparams')'stmt_list IS BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,4,id($2),$4,$6,$9);}
   |RETURN expr';'   {$$ = opr(RETURN,1,$2);}
+  |RETURN ';'   {$$ = opr(RETURN,0);}
 	|VAR VARIABLE IS VARIABLE';' {$$ = opr(VAR,2,id($2),id($4));}
   |TYPE VARIABLE IS ARRAY OF expr VARIABLE ';' {$$ = opr(ARRAY,3,id($2),$6,id($7));}
 	|VARIABLE ASIGN expr';'		{$$ = opr(ASIGN,2,id($1),$3);}
-  |VARIABLE '['expr']''['expr']' ASIGN expr';'{$$ = opr(ASIGN,4,id($1),$3,$6,$9);}
+  |VARIABLE '['expr']' ASIGN expr';'{$$ = opr(ARRAYASIGN,3,id($1),$3,$6);}
+  |VARIABLE '['expr']''['expr']' ASIGN expr';'{$$ = opr(ARRAYASIGN,4,id($1),$3,$6,$9);}
 	|WHILE expr DO stmt_list	END WHILE {$$ = opr(WHILE,2,$2,$4);}
   |REPEAT stmt_list UNTIL expr';' {$$ = opr(REPEAT,2,$2,$4)}
   |FOREACH VARIABLE IN VARIABLE DO stmt_list END FOREACH {$$ = opr(FOREACH,3,id($2),id($4),$6);}
 	|IF expr THEN stmt_list END IF %prec IFX{$$ = opr(IF,2,$2,$4);}
 	|IF expr THEN stmt_list ELIF expr THEN stmt_list ELSE stmt_list END IF{$$ = opr(IF,5,$2,$4,$6,$8,$10);}
 	;
+
+
 stmt_list:
 	stmt 			{$$ = $1}
 	|stmt_list stmt {$$ = opr(';',2,$1,$2);}
@@ -70,9 +76,9 @@ stmt_list:
 expr:
 	INTEGER                	{$$ = con($1);}
 	|VARIABLE				        {$$ = id($1);}
+  |VARIABLE'['expr']'     {$$ = opr(ARRAY,2,id($1),$3);}
   |VARIABLE'('')'         {$$ = opr(FUNCTION,1,id($1));}
-  |VARIABLE'('expr')'     {$$ = opr(FUNCTION,2,id($1),$3);}
-  |VARIABLE'('expr','expr')' {$$ = opr(FUNCTION,3,id($1),$3,$5);}
+  |VARIABLE'('optparams')' {$$ = opr(FUNCTION,2,id($1),$3);}
 	|'-'expr %prec UMINUS   {$$ = opr(UMINUS,1,$2);}
 	|expr'+'expr            {$$ = opr('+',2,$1,$3);}
 	|expr'-'expr            {$$ = opr('-',2,$1,$3);}
@@ -89,6 +95,14 @@ expr:
   |expr OR expr          {$$ = opr(OR,2,$1,$3);}
 	|'('expr')'				{$$ = $2;}
 	;
+
+optparams:
+  params    {$$ = $1;}
+  ;
+params:
+  expr   {$$ = $1;}
+  |params','expr  {$$ = opr(',',2,$1,$3);}
+  ;
 %%
 nodeType *con(int value){
     nodeType *p;
