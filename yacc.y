@@ -14,7 +14,8 @@ int symb[1000];
 extern "C"			
 {					
 	void yyerror(const char *s);
-	extern int yylex(void);//该函数是在lex.yy.c里定义的，yyparse()里要调用该函数，为了能编译和链接，必须用extern加以声明
+	extern int yylex(void);
+  char *strdup(char *str);
 }
 %}
 %token <iValue>INTEGER
