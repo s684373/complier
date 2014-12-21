@@ -20,6 +20,7 @@ extern "C"				//ÎªÁËÄÜ¹»ÔÚC++³ÌĞòÀïÃæµ÷ÓÃCº¯Êı£¬±ØĞë°ÑÃ¿Ò»¸öĞèÒªÊ¹ÓÃµÄCº¯Êı£¬ÆäÉ
 %}
 
 comments \/{2}(.)*\n
+%option yylineno
 %%
 {comments} {}
 ":=" return ASIGN;
