@@ -3,7 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <vector>
+#include <map>
+#include <stack>
+#include <string>
+int ex(nodeType *p);
 nodeType *opr(int oper,int nops,...);
 nodeType *id(char *s);
 nodeType *con(int value);
@@ -11,6 +14,9 @@ unsigned int BKDRHash(char *str);
 void freeNode(nodeType *p);
 int symi[1000];
 int symb[1000];
+map<string,map<string,string> >symtable;
+map<string,string>curmap;
+stack<string> curscope;
 extern "C"			
 {					
 	void yyerror(const char *s);
@@ -38,14 +44,14 @@ program:
 	function   {exit(0);}
 	;
 function:
-	function stmt   {freeNode($2);}
+	function stmt   {ex($2);freeNode($2);}
 	| 
 	;
 stmt:
 	';'     				{$$ = opr(';',2,NULL,NULL);}
 	|expr';'				{$$ = $1}
 	|PRINT expr';'  		{$$ = opr(PRINT,1,$2);}
-  |PROGRAM VARIABLE'('')'stmt_list IS stmt_list BEGINNING stmt_list END {$$ = opr(PROGRAM,3,id($2),$7,$9);}
+  |PROGRAM VARIABLE'('')'stmt_list IS stmt_list BEGINNING stmt_list END {$$ = opr(PROGRAM,4,id($2),$5,$7,$9);}
   |TYPE VARIABLE IS CLASS stmt_list END CLASS';'    {$$ = opr(CLASS,2,id($2),$5);}
   |TYPE VARIABLE IS CLASS EXTENDS VARIABLE stmt_list END CLASS';'    {$$ = opr(EXTENDS,3,id($2),id($6),$7);}
   |FUNCTION VARIABLE'('')'stmt_list IS stmt_list BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,4,$2,$5,$7,$9);}
@@ -145,6 +151,58 @@ nodeType *opr(int  oper, int nops, ...) {
    	for(i = 0;i<nops;i++)
    		p->opr.op[i] = va_arg(ap,nodeType*);
    	va_end(ap);
+    if(oper==PROGRAM)
+      {
+          /*
+          if(symtable.find(p->opr.op[0]->id.s)==symtable.end())
+          {
+            curscope.push(p->opr.op[0]->id.s);
+            map<string,string>varmap;
+            symtable[p->opr.op[0]->id.s]=varmap;
+          }
+          else
+          {
+            yyerror("this program can not be named this");
+          }    */
+      }
+      else if(oper==FUNCTION)
+      {
+          /*map<string,string>::iterator iter;
+          for(iter=curmap.begin();iter!=curmap.end();++iter)
+          {
+            cout<<"key:"<<iter->first<<" value:"<<iter->second<<endl;
+          } 
+          if(symtable[curscope.top()].find(p->opr.op[0]->id.s)==symtable[curscope.top()].end())
+          {
+            //symtable[curscope.top()][p->opr.op[0]->id.s]="function";
+            curscope.push(p->opr.op[0]->id.s);
+          }
+           else
+          {
+            yyerror("this function's name has been used");
+          }   
+          cout<<symtable["example"]["isodd"];*/
+      }
+      else if(oper==VAR)
+      {
+        /*if(p->opr.op[1]->id.s!="ingeter"&&p->opr.op[1]->id.s!="boolean")
+        {
+          if(curmap.find(p->opr.op[1]->id.s)==curmap.end())
+          {
+            cout<<p->opr.op[1]->id.s;
+            yyerror("this variable's type has not been defined");
+          }
+        }
+        if(curmap.find(p->opr.op[0]->id.s)==curmap.end())
+        {
+          curmap[p->opr.op[0]->id.s]=p->opr.op[1]->id.s;
+        }
+        else
+        {
+          yyerror("this variable's name has been used");
+        }*/
+      }
+      
    	return p;
 
 } 
@@ -174,14 +232,14 @@ unsigned int BKDRHash(char *str)
 
 
 	
-void yyerror(const char *s)			//当yacc遇到语法错误时，会回调yyerror函数，并且把错误信息放在参数s中
+void yyerror(const char *s)			//碌卤yacc脫枚碌陆脫茂路篓麓铆脦贸脢卤拢卢禄谩禄脴碌梅yyerror潞炉脢媒拢卢虏垄脟脪掳脩麓铆脦贸脨脜脧垄路脜脭脷虏脦脢媒s脰脨
 {
-	cerr<<s<<endl;					//直接输出错误信息
+	cerr<<s<<endl;					//脰卤陆脫脢盲鲁枚麓铆脦贸脨脜脧垄
 }
 
-int main()							//程序主函数，这个函数也可以放到其它.c, .cpp文件里
+int main()							//鲁脤脨貌脰梅潞炉脢媒拢卢脮芒赂枚潞炉脢媒脪虏驴脡脪脭路脜碌陆脝盲脣眉.c, .cpp脦脛录镁脌茂
 {
-	yyparse();						//使yacc开始读取输入和解析，它会调用lex的yylex()读取记号
-	
+	yyparse();						//脢鹿yacc驴陋脢录露脕脠隆脢盲脠毛潞脥陆芒脦枚拢卢脣眉禄谩碌梅脫脙lex碌脛yylex()露脕脠隆录脟潞脜
+
 	return 0;
 }

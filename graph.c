@@ -186,11 +186,12 @@ void pre_order(nodeType *p)
 		switch(p->type)
 		{
 		case typeCon:
-			char word[20];
-			sprintf(word,"%d",p->con.value);
-			s=word;
-			printf(s);
-			printf("\n");
+			//char word[20];
+			//sprintf(word,"%d",p->con.value);
+			//s=word;
+			//printf(s);
+			//printf("\n");
+			
 			break;
 		case typeId:
 			s=p->id.s;

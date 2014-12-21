@@ -69,11 +69,5 @@ return INTEGER;
 //第3段：C函数定义段
 int yywrap(void)
 {
-	vector<int> a;
-	a.push_back(2);
-	a.push_back(3);
-	for(int i = 0 ; i < a.size(); i++)
-	cout<< a[i];
-	puts("-----the file is end");
 	return 1;								//返回1表示读取全部结束。如果要接着读其它文件，可以这里fopen该文件，文件指针赋给yyin，并返回0
 }
