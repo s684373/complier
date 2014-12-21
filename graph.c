@@ -15,6 +15,7 @@ void graphDrawArrow(int c1,int ll,int c2,int l2);
 void exNode(nodeType *p,int c,int l,int *ce,int *cm);
 
 void semanalysis(nodeType *p);
+void pre_order(nodeType *p);
 
 int ex(nodeType *p){
 	int rte,rtm;
@@ -174,6 +175,71 @@ void graphDrawArrow(int c1,int l1,int c2,int l2){
 
 void semanalysis(nodeType *p)
 {
-	cout<<p->opr.nops;
-	cout<<p->opr.op[2]->opr.op[0]->opr.op[0]->id.s<<endl;
+	pre_order(p);
+}
+
+void pre_order(nodeType *p)
+{
+	if(p!=NULL)
+	{
+		char* s;
+		switch(p->type)
+		{
+		case typeCon:
+			char word[20];
+			sprintf(word,"%d",p->con.value);
+			s=word;
+			printf(s);
+			printf("\n");
+			break;
+		case typeId:
+			s=p->id.s;
+			printf(s);
+			printf("\n");
+			break;
+		case typeOpr:
+			switch(p->opr.oper)
+			{
+				case PROGRAM:
+					s = "program";break;
+				case WHILE: s = "while";break;
+				case REPEAT:s = "repeat";break;
+				case FOREACH:s = "foreach";break;
+				case CLASS: s = "class";break;
+				case EXTENDS: s = "extends";break;
+				case IF: s = "if";break;
+				case VAR: s = "var";break;
+				case ARRAY: s = "array";break;
+				case RETURN: s = "return";break;
+				case FUNCTION: s = "function";break;
+				case PRINT:s = "print";break;
+				case ';':s = "[;]";break;
+				case ',':s = "[,]";break;
+				case ASIGN:s = "[:=]";break;
+				case ARRAYASIGN:s = "[:=]";break;
+				case UMINUS:s = "[_]";break;
+				case '+':s = "[+]";break;
+				case '-':s = "[-]";break;
+				case '*':s = "[*]";break;
+				case '/':s = "[/]";break;
+				case '%':s = "[%]";break;
+				case '<':s = "[<]";break;
+				case '>':s = "[>]";break;
+				case GE:s = "[>=]";break;
+				case LE:s = "[<=]";break;
+				case NE:s = "[!=]";break;
+				case EQ:s = "[==]";break;
+				case AND:s = "[AND]";break;
+				case OR :s = "[OR]";break;
+			}
+			printf(s);
+			printf("\n");
+			for(int i=0;i<p->opr.nops;i++)
+			{
+				pre_order(p->opr.op[i]);
+			}
+			break;
+		}
+	}
+
 }
