@@ -53,6 +53,7 @@ stmt:
   |expr';'        {$$ = $1}
   |PRINT expr';'      {$$ = opr(PRINT,1,$2);}
   |PROGRAM VARIABLE'('')'stmt_list IS stmt_list BEGINNING stmt_list END {$$ = opr(PROGRAM,3,id($2),$7,$9);}
+  |PROGRAM VARIABLE'('')'IS stmt_list BEGINNING stmt_list END {$$ = opr(PROGRAM,3,id($2),$6,$8);}
   |TYPE VARIABLE IS CLASS stmt_list END CLASS';'    {$$ = opr(CLASS,2,id($2),$5);}
   |TYPE VARIABLE IS CLASS EXTENDS VARIABLE stmt_list END CLASS';'    {$$ = opr(EXTENDS,3,id($2),id($6),$7);}
   |FUNCTION VARIABLE'('')'stmt_list IS stmt_list BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,4,$2,$5,$7,$9);}
@@ -226,7 +227,7 @@ unsigned int BKDRHash(char *str)
     return (hash & 0x7FFFFFFF);
 }
   
-void yyerror(const char *s)     //µ±yaccÓöµ½Óï·¨´íÎóÊ±£¬»á»Øµ÷yyerrorº¯Êý£¬²¢ÇÒ°Ñ´íÎóÐÅÏ¢·ÅÔÚ²ÎÊýsÖÐ
+void yyerror(const char *s)     
 {
    cerr<<yylineno<<":"<<s<<endl;  
 }

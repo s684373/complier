@@ -1,15 +1,17 @@
  program example()
-  var p is integer;
  is
  var p is integer;
  var q is integer;
- var oo is integer;
+ var m is integer;
  begin
- p := 1;
- q := 5;
- oo := 2;
+ p:=1;
+ q:=2;
  print p;
-
- print oo;
+ print q;
+ m := p;
+ p:=q;
+ q:=m;
+ print p;
+ print q;
  return 0;
  end
