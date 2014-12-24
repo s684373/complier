@@ -10,7 +10,7 @@ nodeType *id(char *s);
 nodeType *con(int value);
 unsigned int BKDRHash(char *str);
 void freeNode(nodeType *p);
-
+int ex(nodeType *p);
 int symi[1000];
 int symb[1000];
 extern int yylineno;
@@ -18,7 +18,7 @@ extern "C"
 {					
 	void yyerror(const char *s);
 	extern int yylex(void);
-  char* strdup(char *str);
+  char* strdup(char *str); 
 }
 %}
 %token <iValue>INTEGER
@@ -41,12 +41,12 @@ program:
 	function   {exit(0);}
 	;
 function:
-	function stmt   {freeNode($2);}
+	function stmt   {ex($2);freeNode($2);}
 	| 
 	;
 stmt:
 	';'     				{$$ = opr(';',2,NULL,NULL);}
-	|expr';'				{$$ = $1}
+	|expr';'				{$$ = $1;}
 	|PRINT expr';'  		{$$ = opr(PRINT,1,$2);}
   |PROGRAM VARIABLE'('')'stmt_list IS stmt_list BEGINNING stmt_list END {$$ = opr(PROGRAM,3,id($2),$7,$9);}
   |TYPE VARIABLE IS CLASS stmt_list END CLASS';'    {$$ = opr(CLASS,2,id($2),$5);}
@@ -64,15 +64,16 @@ stmt:
   |VARIABLE '['expr']' ASIGN expr';'{$$ = opr(ARRAYASIGN,3,id($1),$3,$6);}
   |VARIABLE '['expr']''['expr']' ASIGN expr';'{$$ = opr(ARRAYASIGN,4,id($1),$3,$6,$9);}
 	|WHILE expr DO stmt_list	END WHILE {$$ = opr(WHILE,2,$2,$4);}
-  |REPEAT stmt_list UNTIL expr';' {$$ = opr(REPEAT,2,$2,$4)}
+  |REPEAT stmt_list UNTIL expr';' {$$ = opr(REPEAT,2,$2,$4);}
   |FOREACH VARIABLE IN VARIABLE DO stmt_list END FOREACH {$$ = opr(FOREACH,3,id($2),id($4),$6);}
 	|IF expr THEN stmt_list END IF %prec IFX{$$ = opr(IF,2,$2,$4);}
-	|IF expr THEN stmt_list ELIF expr THEN stmt_list ELSE stmt_list END IF{$$ = opr(IF,5,$2,$4,$6,$8,$10);}
+	|IF expr THEN stmt_list ELIF expr THEN stmt_list ELSE stmt_list END IF{$$ = opr(IF,4,$2,$4,opr(ELIF,2,$6,$8),opr(ELSE,1,$10));}
+  |IF expr THEN stmt_list ELSE stmt_list END IF{$$ = opr(IF,3,$2,$4,opr(ELSE,1,$6));}
 	;
 
 
 stmt_list:
-	stmt 			{$$ = $1}
+	stmt 			{$$ = $1;}
 	|stmt_list stmt {$$ = opr(';',2,$1,$2);}
 	;
 expr:

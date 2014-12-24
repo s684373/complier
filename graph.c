@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include<string.h>
-#include"calc3.h"
-#include"cal.tab.h"
+#include"main.h"
+#include"yacc.tab.h"
 
 int del = 1;
 int eps = 3;
@@ -45,6 +45,8 @@ void exNode(nodeType *p,int c,int l,int *ce,int *cm){
 				case CLASS: s = "class";break;
 				case EXTENDS: s = "extends";break;
 				case IF: s = "if";break;
+				case ELIF: s = "elif";break;
+				case ELSE: s = "else";break;
 				case VAR: s = "var";break;
 				case ARRAY: s = "array";break;
 				case RETURN: s = "return";break;
@@ -112,7 +114,6 @@ void graphTest(int l,int c){
 	if(c>=cmax)ok=0;
 	if(ok)return;
 	printf("error\n");
-	exit(1);
 }
 
 void graphInit(void){
