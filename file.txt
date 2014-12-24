@@ -1,17 +1,8 @@
  program example()
  is
- var p is integer;
- var q is integer;
- var m is integer;
+ type line is array of 10 integer;
+ type oo is array of 10 line;
  begin
- p:=1;
- q:=2;
- print p;
- print q;
- m := p;
- p:=q;
- q:=m;
- print p;
- print q;
+ oo[1][2] := 1;
  return 0;
  end

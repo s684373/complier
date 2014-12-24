@@ -21,7 +21,6 @@ class Code
 		Code()
 		{
 			regi = 1;
-			simicon = 0;
 			ret = "ret i32 0";
 			printtou = "@.str = private unnamed_addr constant [3 x i8] c\"%d\\00\", align 1";
 			printdefine = "call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([3 x i8]* @.str, i32 0, i32 0), i32 %";
@@ -29,7 +28,6 @@ class Code
 		}
 		string start = "define i32 @main() nounwind uwtable";
 		int regi;
-		int simicon;
 		string getallo = "alloca i32, align 4";
 		string printdefine;
 		string printtou;
@@ -56,6 +54,24 @@ class Code
     		sprintf(t, "%d", num);
     		s = t;
     		return s;
+		}
+		void load(char *s1)
+		{
+			string str(s1);
+			string s = "%"+numtostr(regi++) + "=load i32* %"+str;
+			s += ", align 4";
+			out << s << endl;
+		}
+		void compare(string o,int cp)
+		{
+			string cmp[10]={"eq","sgt","slt","ne"};
+			string s = "%" + numtostr(regi++);
+			s += "= icmp " + cmp[cp] + " i32 %" + numtostr(regi - 2)
+				+ "," + o;
+			out << s << endl;
+			string s2 = "br i1 %" + numtostr(regi - 1);
+			s2 += ", label %if_then , label %if_else";
+			out << s2 << endl;
 		}
 		string store(char *s1 , int s2)
 		{
@@ -107,6 +123,10 @@ class Code
     		 s += '=' + getallo;
     		 regi++;
 			 return s;
+	    }
+	    void label(string s1)
+	    {
+	    	out << s1 << endl;
 	    }
 	    string register_allo_n(char *s) 
 		{
@@ -203,13 +223,13 @@ void assign_pre_order(nodeType *p)
 			ans = a.assign_two_con(s1,s2,s3);
 			stackint.push(ans);
 			if(!stacktype.empty())
-					{	
-						int s = stacktype.top();
-						if(s == 1 || s == 2)
-							id_num = 1;
-						else
-							id_num = 0;
-					}
+			{	
+				int s = stacktype.top();
+				if(s == 1 || s == 2)
+					id_num = 1;
+				else
+					id_num = 0;
+			}
 			stacktype.push(1);
 			/*if(stacktype.top() == 1)
 			{
@@ -247,6 +267,54 @@ void assign_pre_order(nodeType *p)
 			}
 	}
 }
+void if_expression(nodeType *p)
+{
+	string rightval;
+	if(p->opr.op[1]->type == typeOpr)
+	{
+		if(p->opr.op[1]->opr.oper == '+'
+			|| p->opr.op[1]->opr.oper == '-'
+			|| p->opr.op[1]->opr.oper == '*'
+			||p->opr.op[1]->opr.oper == '/')
+		{
+		 	assign_pre_order(p->opr.op[1]);
+			rightval = stackint.top();
+			stackint.pop();
+			stacktype.pop();
+		}
+	}
+	else if(p->opr.op[1]->type == typeCon)
+		rightval = a.numtostr(p->opr.op[1]->con.value);
+	else
+		rightval = a.numtostr(mapstring[chartostring(p->opr.op[1]->id.s)]);
+	switch(p->type)
+	{
+		case typeOpr:
+		switch(p->opr.oper)
+		{
+			case EQ:
+				a.load(p->opr.op[0]->id.s);
+				a.compare(rightval,0);
+				a.label("if_then:");
+			break;
+			case GE:
+				a.load(p->opr.op[0]->id.s);
+				a.compare(rightval,1);
+				a.label("if_then:");
+			break;
+			case LE:
+				a.load(p->opr.op[0]->id.s);
+				a.compare(rightval,2);
+				a.label("if_then:");
+			break;
+			case NE:
+				a.load(p->opr.op[0]->id.s);
+				a.compare(rightval,3);
+				a.label("if_then:");
+			break; 
+		}
+	}
+}
 void ppre_order(nodeType *p)
 {
 	if(p!=NULL)
@@ -282,14 +350,17 @@ void ppre_order(nodeType *p)
 				case FOREACH:s = "foreach";break;
 				case CLASS: s = "class";break;
 				case EXTENDS: s = "extends";break;
-				case IF: s = "if";break;
+				case IF: 
+					s = "if";
+					if_expression(p->opr.op[0]);
+					break;
 				case VAR: 
 					s = "var";
 					isvar = true;
 					out << a.register_allo_n(p->opr.op[0]->id.s)<<endl;
 				break;
 				case ARRAY: s = "array";break;
-				case RETURN: 
+				case RETURN:
 				s = "return";
 				out << a.ret<<"}"<<endl;
 				break;
@@ -298,7 +369,7 @@ void ppre_order(nodeType *p)
 					s = "print";
 					a.print(p->opr.op[0]->id.s);
 					break;
-				case ';':s = "[;]";a.simicon++;break;
+				case ';':s = "[;]";break;
 				case ',':s = "[,]";break;
 				case ASIGN:
 					s = "[:=]";
@@ -308,8 +379,7 @@ void ppre_order(nodeType *p)
 						a.store_id(p->opr.op[1] -> id.s , p->opr.op[0] -> id.s);
 					else
 						assign_pre_order(p->opr.op[1]);
-
-						cout <<"^^^^^^^^^^^^^^^^^^"<<endl;
+						//cout <<"^^^^^^^^^^^^^^^^^^"<<endl;
 						//cout << mapstring["q"];
 						//cout << stackint.top();
 						if(stackint.size() == 1 && stacktype.top() == 1)
@@ -325,10 +395,14 @@ void ppre_order(nodeType *p)
 					//		stacktype.pop();
 					//		stackint.pop();
 				//		}
-						cout <<"^^^^^^^^^^^^^^^^^^"<<endl;
+						//cout <<"^^^^^^^^^^^^^^^^^^"<<endl;
 					break;
 				case ARRAYASIGN:s = "[:=]";break;
 				case UMINUS:s = "[_]";break;
+				case ENDIF: s = "endif";break;
+				case ENDWHILE: s = "endwhile";break;
+				case ENDFOR: s = "endforeach";break;
+				case XIABIAO: s = "xiabiao";break;
 				case '+':s = "[+]";break;
 				case '-':s = "[-]";break;
 				case '*':s = "[*]";break;
@@ -336,6 +410,8 @@ void ppre_order(nodeType *p)
 				case '%':s = "[%]";break;
 				case '<':s = "[<]";break;
 				case '>':s = "[>]";break;
+				case ELIF:s="elif";break;
+				case ELSE:s="else";break;
 				case GE:s = "[>=]";break;
 				case LE:s = "[<=]";break;
 				case NE:s = "[!=]";break;

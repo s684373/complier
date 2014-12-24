@@ -30,7 +30,7 @@ extern "C"
 %token ASIGN ARRAYASIGN
 %token FUNCTION END ARRAY TYPE OF RETURN  CLASS EXTENDS CLASSFUN PROGRAM
 %token VAR IS BEGINNING
-%token WHILE IF PRINT DO ELIF THEN REPEAT UNTIL FOREACH IN
+%token WHILE IF PRINT DO ELIF THEN REPEAT UNTIL FOREACH IN ENDIF ENDWHILE ENDFOR XIABIAO
 %nonassoc IFX
 %nonassoc ELSE
 %left OR
@@ -66,15 +66,14 @@ stmt:
   |VAR VARIABLE IS VARIABLE';' {$$ = opr(VAR,2,id($2),id($4));}
   |TYPE VARIABLE IS ARRAY OF expr VARIABLE ';' {$$ = opr(ARRAY,3,id($2),$6,id($7));}
   |VARIABLE ASIGN expr';'   {$$ = opr(ASIGN,2,id($1),$3);}
-  |VARIABLE '['expr']' ASIGN expr';'{$$ = opr(ARRAYASIGN,3,id($1),$3,$6);}
-  |VARIABLE '['expr']''['expr']' ASIGN expr';'{$$ = opr(ARRAYASIGN,4,id($1),$3,$6,$9);}
-  |WHILE expr DO stmt_list  END WHILE {$$ = opr(WHILE,2,$2,$4);}
+  |VARIABLE '['expr']' ASIGN expr';'{$$ = opr(ARRAYASIGN,3,id($1),opr(XIABIAO,1,$3),$6);}
+  |VARIABLE '['expr']''['expr']' ASIGN expr';'{$$ = opr(ARRAYASIGN,3,id($1),opr(XIABIAO,2,$3,$6),$9);}
+  |WHILE expr DO stmt_list  END WHILE {$$ = opr(WHILE,3,$2,$4,opr(ENDWHILE,0));}
   |REPEAT stmt_list UNTIL expr';' {$$ = opr(REPEAT,2,$2,$4)}
-  |FOREACH VARIABLE IN VARIABLE DO stmt_list END FOREACH {$$ = opr(FOREACH,3,id($2),id($4),$6);}
-  |IF expr THEN stmt_list END IF %prec IFX{$$ = opr(IF,2,$2,$4);}
-  |IF expr THEN stmt_list ELIF expr THEN stmt_list ELSE stmt_list END IF{$$ = opr(IF,5,$2,$4,$6,$8,$10);}
-  ;
-
+  |FOREACH VARIABLE IN VARIABLE DO stmt_list END FOREACH {$$ = opr(FOREACH,4,id($2),id($4),$6,opr(ENDFOR,0));}
+  |IF expr THEN stmt_list END IF %prec IFX{$$ = opr(IF,3,$2,$4,opr(ENDIF,0));}
+  |IF expr THEN stmt_list ELIF expr THEN stmt_list ELSE stmt_list END IF{$$ = opr(IF,5,$2,$4,opr(ELIF,2,$6,$8),opr(ELSE,1,$10),opr(ENDIF,0));}
+  |IF expr THEN stmt_list ELSE stmt_list END IF{$$ = opr(IF,4,$2,$4,opr(ELSE,1,$6),opr(ENDIF,0));}
 
 stmt_list:
   stmt      {$$ = $1}
@@ -83,7 +82,8 @@ stmt_list:
 expr:
   INTEGER                 {$$ = con($1);}
   |VARIABLE               {$$ = id($1);}
-  |VARIABLE'['expr']'     {$$ = opr(ARRAY,2,id($1),$3);}
+  |VARIABLE'['expr']'     {$$ = opr(ARRAY,2,id($1),opr(XIABIAO,1,$3));}
+  |VARIABLE'['expr']''['expr']'     {$$ = opr(ARRAY,2,id($1),opr(XIABIAO,2,$3,$6));}
   |VARIABLE'('')'         {$$ = opr(FUNCTION,1,id($1));}
   |VARIABLE'('optparams')' {$$ = opr(FUNCTION,2,id($1),$3);}
   |'-'expr %prec UMINUS   {$$ = opr(UMINUS,1,$2);}
