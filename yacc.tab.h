@@ -75,15 +75,19 @@ extern int yydebug;
      UNTIL = 284,
      FOREACH = 285,
      IN = 286,
-     IFX = 287,
-     ELSE = 288,
-     OR = 289,
-     AND = 290,
-     NE = 291,
-     EQ = 292,
-     LE = 293,
-     GE = 294,
-     UMINUS = 295
+     ENDIF = 287,
+     ENDWHILE = 288,
+     ENDFOR = 289,
+     XIABIAO = 290,
+     IFX = 291,
+     ELSE = 292,
+     OR = 293,
+     AND = 294,
+     NE = 295,
+     EQ = 296,
+     LE = 297,
+     GE = 298,
+     UMINUS = 299
    };
 #endif
 
