@@ -19,7 +19,7 @@
    end function isodd;
  
    // ackerman 函数
-   function ackerman(m, n)
+   function ackerman(m,n)
      var m is integer;
      var n is integer;
      return integer;
@@ -52,13 +52,13 @@
     begin
       i := 0;
       // 如果 i < 10 成立则进入循环体
-      i := g[i][j];
-      i := l[i];
+      g[i] := g[j];
+      g[2][i] := 2;
       while i < 10 do
         j := 0;
         // 无论何种条件，进入循环体
         repeat
-          g[i][j] := l;
+          g[i][j] := 12;
         // 如果 j >= 10 成立则退出循环，否则回到循环开始
         until j >= 10;
         i := i + 1;

@@ -1849,31 +1849,31 @@ yyreduce:
   case 12:
 /* Line 1787 of yacc.c  */
 #line 56 "yacc.y"
-    {(yyval.nPtr) = opr(FUNCTION,4,(yyvsp[(2) - (13)].sIndex),(yyvsp[(5) - (13)].nPtr),(yyvsp[(7) - (13)].nPtr),(yyvsp[(9) - (13)].nPtr));}
+    {(yyval.nPtr) = opr(FUNCTION,6,(yyvsp[(2) - (13)].sIndex),(yyvsp[(5) - (13)].nPtr),opr(IS,0),(yyvsp[(7) - (13)].nPtr),opr(BEGINNING,0),(yyvsp[(9) - (13)].nPtr));}
     break;
 
   case 13:
 /* Line 1787 of yacc.c  */
 #line 57 "yacc.y"
-    {(yyval.nPtr) = opr(FUNCTION,2,(yyvsp[(2) - (11)].sIndex),(yyvsp[(7) - (11)].nPtr));}
+    {(yyval.nPtr) = opr(FUNCTION,4,(yyvsp[(2) - (11)].sIndex),opr(IS,0),opr(BEGINNING,0),(yyvsp[(7) - (11)].nPtr));}
     break;
 
   case 14:
 /* Line 1787 of yacc.c  */
 #line 58 "yacc.y"
-    {(yyval.nPtr) = opr(FUNCTION,3,(yyvsp[(2) - (12)].sIndex),(yyvsp[(5) - (12)].nPtr),(yyvsp[(8) - (12)].nPtr));}
+    {(yyval.nPtr) = opr(FUNCTION,5,(yyvsp[(2) - (12)].sIndex),(yyvsp[(5) - (12)].nPtr),opr(IS,0),opr(BEGINNING,0),(yyvsp[(8) - (12)].nPtr));}
     break;
 
   case 15:
 /* Line 1787 of yacc.c  */
 #line 59 "yacc.y"
-    {(yyval.nPtr) = opr(FUNCTION,5,id((yyvsp[(2) - (14)].sIndex)),(yyvsp[(4) - (14)].nPtr),(yyvsp[(6) - (14)].nPtr),(yyvsp[(8) - (14)].nPtr),(yyvsp[(10) - (14)].nPtr));}
+    {(yyval.nPtr) = opr(FUNCTION,7,id((yyvsp[(2) - (14)].sIndex)),(yyvsp[(4) - (14)].nPtr),(yyvsp[(6) - (14)].nPtr),opr(IS,0),(yyvsp[(8) - (14)].nPtr),opr(BEGINNING,0),(yyvsp[(10) - (14)].nPtr));}
     break;
 
   case 16:
 /* Line 1787 of yacc.c  */
 #line 60 "yacc.y"
-    {(yyval.nPtr) = opr(FUNCTION,4,id((yyvsp[(2) - (13)].sIndex)),(yyvsp[(4) - (13)].nPtr),(yyvsp[(6) - (13)].nPtr),(yyvsp[(9) - (13)].nPtr));}
+    {(yyval.nPtr) = opr(FUNCTION,6,id((yyvsp[(2) - (13)].sIndex)),(yyvsp[(4) - (13)].nPtr),(yyvsp[(6) - (13)].nPtr),opr(IS,0),opr(BEGINNING,0),(yyvsp[(9) - (13)].nPtr));}
     break;
 
   case 17:

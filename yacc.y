@@ -53,11 +53,11 @@ stmt:
   |PROGRAM VARIABLE'('')'IS stmt_list BEGINNING stmt_list END {$$ = opr(PROGRAM,3,id($2),$6,$8);}
   |TYPE VARIABLE IS CLASS stmt_list END CLASS';'    {$$ = opr(CLASS,2,id($2),$5);}
   |TYPE VARIABLE IS CLASS EXTENDS VARIABLE stmt_list END CLASS';'    {$$ = opr(EXTENDS,3,id($2),id($6),$7);}
-  |FUNCTION VARIABLE'('')'stmt_list IS stmt_list BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,4,$2,$5,$7,$9);}
-  |FUNCTION VARIABLE'('')'IS BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,2,$2,$7);}
-  |FUNCTION VARIABLE'('')'stmt_list IS BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,3,$2,$5,$8);}
-  |FUNCTION VARIABLE'('optparams')'stmt_list IS stmt_list BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,5,id($2),$4,$6,$8,$10);}
-  |FUNCTION VARIABLE'('optparams')'stmt_list IS BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,4,id($2),$4,$6,$9);}
+  |FUNCTION VARIABLE'('')'stmt_list IS stmt_list BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,6,$2,$5,opr(IS,0),$7,opr(BEGINNING,0),$9);}
+  |FUNCTION VARIABLE'('')'IS BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,4,$2,opr(IS,0),opr(BEGINNING,0),$7);}
+  |FUNCTION VARIABLE'('')'stmt_list IS BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,5,$2,$5,opr(IS,0),opr(BEGINNING,0),$8);}
+  |FUNCTION VARIABLE'('optparams')'stmt_list IS stmt_list BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,7,id($2),$4,$6,opr(IS,0),$8,opr(BEGINNING,0),$10);}
+  |FUNCTION VARIABLE'('optparams')'stmt_list IS BEGINNING stmt_list END FUNCTION VARIABLE';' {$$ = opr(FUNCTION,6,id($2),$4,$6,opr(IS,0),opr(BEGINNING,0),$9);}
   |RETURN expr';'   {$$ = opr(RETURN,1,$2);}
   |RETURN ';'   {$$ = opr(RETURN,0);}
   |VAR VARIABLE IS VARIABLE';' {$$ = opr(VAR,2,id($2),id($4));}
