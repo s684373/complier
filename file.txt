@@ -26,11 +26,11 @@
    is
    begin
      if 2 == m then
-       return n + 1;
+       return m + 1;
      elif m > 0 and n == 0 then
        return ackerman(m - 1, 1);
      else
-       return ackerman(m - 1, ackerman(m, n - 1));
+       return ackerman(m-1, ackerman(m, n - 1));
      end if
    end function ackerman;
  
@@ -42,6 +42,7 @@
    // 打印一个乘法表
     function multy(n)
       var n is integer;
+      return integer;
       // 没有返回值
     is
       // 声明部分可以声明函数中用到的局部变量
@@ -51,17 +52,16 @@
       var l is line;
     begin
       i := 0;
+      
       // 如果 i < 10 成立则进入循环体
-      g[i] := g[j];
-      g[2][i] := 2;
+      i := 2-g[1][2]+l[2]+2-3;
       while i < 10 do
         j := 0;
         // 无论何种条件，进入循环体
         repeat
-          g[i][j] := 12;
+          j := g[l[i]][g[2+i][3]];
         // 如果 j >= 10 成立则退出循环，否则回到循环开始
         until j >= 10;
-        i := i + 1;
       // 此时回到循环的条件判断处
       end while
       // 遍历 g 中的每个元素
@@ -70,6 +70,7 @@
           print i;
         end foreach
       end foreach
+      return g[i][j];
     end function multy;
   
     // 可以定义一个类
@@ -85,7 +86,7 @@
         var t is integer;
       begin
         t := x + v;
-        v := x;
+        v := x ;
         return t;
       end function f;
     end class;
@@ -106,14 +107,17 @@
  is
    var p is a;
    var q is b;
+   var g is grid;
+   var l is line;
  // 主程序
  begin
    p := q;
+
    print p.f(5);
    print q.f(4);
-   p.v := 3;
+   l[2] := p.v;
    print p.f(3);
-   multy();
+   multy(3);
    print ackerman(3, 4);
    if isodd(3) then
      print 3;

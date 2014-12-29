@@ -14,6 +14,14 @@ int setin=0;
 map<string,map<string,string> >symtable;
 map<string,map<string,int> >functable;
 stack<string> curscope;
+stack<string> stackint;
+stack<int> stacktype;
+
+
+
+string curtype;
+
+int id_num=0;
 
 void graphInit(void);
 void graphFinish();
@@ -27,8 +35,11 @@ void semanalysis(nodeType *p);
 void pre_order(nodeType *p);
 void getarrayinfo(string s,int& size,string& type);
 bool varintable(string varname,map<string,map<string,string> >symtable,stack<string> temstack,string& scope);
-bool isbool(char* varname);
+bool isbool(string varname);
 bool typeequal(string type1,string type2,int linenum,int arraynum1,int arraynum2);
+string assign_pre(nodeType *p);
+
+string getidtype(string id,int linenum);
 
 int ex(nodeType *p){
 	int rte,rtm;
@@ -205,14 +216,14 @@ void pre_order(nodeType *p)
 			break;
 		case typeId:
 		{
-			if(setin==0)
+			if(setin==0||setin==4)
 			{	
 				
 				string input=p->id.s;
 				if(input.find(".")==string::npos)
 				{
 					string scope;
-					if( (varintable(p->id.s,symtable,curscope,scope)==false && !isbool(p->id.s) ) && (strcmp(p->id.s,"integer")!=0 && strcmp(p->id.s,"boolean")!=0 ) )
+					if( (varintable(p->id.s,symtable,curscope,scope)==false && !isbool(input)) && (strcmp(p->id.s,"integer")!=0 && strcmp(p->id.s,"boolean")!=0 ) )
 					{
 						cout<<"line: "<<p->linenum<<" this variable has not been defined: "<<p->id.s<<endl;
 						break;
@@ -220,7 +231,7 @@ void pre_order(nodeType *p)
 				}
 				else
 				{
-					string firvar=input.substr(0,input.find("."));
+						string firvar=input.substr(0,input.find("."));
 						string secvar=input.substr(input.find(".")+1,input.size());
 						string firtype;
 						string scope;
@@ -241,7 +252,9 @@ void pre_order(nodeType *p)
 			switch(p->opr.oper)
 			{
 				case PROGRAM:
-					if(symtable.find(p->opr.op[0]->id.s)==symtable.end()&&!isbool(p->opr.op[0]->id.s))
+				{
+					string name=p->opr.op[0]->id.s;
+					if(symtable.find(p->opr.op[0]->id.s)==symtable.end()&&!isbool(name))
           			{
             			curscope.push(p->opr.op[0]->id.s);
             			map<string,string>varmap;
@@ -254,6 +267,7 @@ void pre_order(nodeType *p)
             			return;
           			}    
 					break;
+				}
 				case WHILE: 
 					break;
 				case REPEAT:s = "repeat";break;
@@ -505,20 +519,59 @@ void pre_order(nodeType *p)
 						}
 						else if(p->opr.op[1]->opr.op[0]->type==typeId)
 						{
-							if(varintable(p->opr.op[1]->opr.op[0]->id.s,symtable,curscope,scope)==false)
+							string type2=getidtype(p->opr.op[1]->opr.op[0]->id.s,p->opr.op[1]->opr.op[0]->linenum);
+							if(type2!="integer")
 							{
-								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined: "<<p->opr.op[1]->opr.op[0]->id.s<<endl;
+								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable's type is not ingeter: "<<p->opr.op[1]->opr.op[0]->id.s<<endl;
 								break;
 							}
-							else
+							
+
+						}
+						else if(p->opr.op[1]->opr.op[0]->type==typeOpr)
+						{
+							if(p->opr.op[1]->opr.op[0]->opr.oper==CALLARRAY)
 							{
-								if(symtable[scope][p->opr.op[1]->opr.op[0]->id.s]!="integer")
+								string type2;
+								type2=symtable[curscope.top()][p->opr.op[1]->opr.op[0]->opr.op[0]->id.s];
+								int arraynum=p->opr.op[1]->opr.op[0]->opr.op[1]->opr.nops;
+								if(typeequal("integer",type2,p->opr.op[0]->linenum,0,arraynum)==false)
 								{
-									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable's type is not ingeter: "<<p->opr.op[1]->opr.op[0]->id.s<<endl;
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer"<<endl;
 									break;
 								}
 							}
-
+							else if(p->opr.op[1]->opr.op[0]->opr.oper==CALLFUNCTION)
+							{
+								string type2;
+								string funname;
+								string scope;
+								funname=p->opr.op[1]->opr.op[0]->opr.op[0]->id.s;
+								type2=symtable[funname]["return"];
+								if("integer"!=type2)
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer "<<endl;
+									break;
+								}
+							}
+							else
+							{
+								if("integer"!=assign_pre(p->opr.op[1]->opr.op[0]))
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer"<<endl;
+									while(!stacktype.empty())
+										stacktype.pop();
+									while(!stackint.empty())
+										stackint.pop();
+									id_num=0;
+									break;
+								}
+								while(!stacktype.empty())
+									stacktype.pop();
+								while(!stackint.empty())
+									stackint.pop();
+								id_num=0;
+							}
 						}
 					}
 					else if(p->opr.op[1]->opr.nops==2)
@@ -558,24 +611,64 @@ void pre_order(nodeType *p)
 						}
 						else if(p->opr.op[1]->opr.op[0]->type==typeId)
 						{
-							if(varintable(p->opr.op[1]->opr.op[0]->id.s,symtable,curscope,scope)==false)
+							string type2=getidtype(p->opr.op[1]->opr.op[0]->id.s,p->opr.op[1]->opr.op[0]->linenum);
+							if(type2!="integer")
 							{
-								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined: "<<p->opr.op[1]->opr.op[0]->id.s<<endl;
+								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable's type is not integer: "<<p->opr.op[1]->opr.op[0]->id.s<<endl;
 								break;
 							}
-							else
+						}
+						else if(p->opr.op[1]->opr.op[0]->type==typeOpr)
+						{
+							if(p->opr.op[1]->opr.op[0]->opr.oper==CALLARRAY)
 							{
-								if(symtable[scope][p->opr.op[1]->opr.op[0]->id.s]!="integer")
+								string type2;
+								type2=symtable[curscope.top()][p->opr.op[1]->opr.op[0]->opr.op[0]->id.s];
+								int arraynum=p->opr.op[1]->opr.op[0]->opr.op[1]->opr.nops;
+								if(typeequal("integer",type2,p->opr.op[0]->linenum,0,arraynum)==false)
 								{
-									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable's type is not ingeter: "<<p->opr.op[1]->opr.op[0]->id.s<<endl;
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer"<<endl;
 									break;
 								}
 							}
+							else if(p->opr.op[1]->opr.op[0]->opr.oper==CALLFUNCTION)
+							{
+								string type2;
+								string funname;
+								string scope;
+								funname=p->opr.op[1]->opr.op[0]->opr.op[0]->id.s;
+								type2=symtable[funname]["return"];
+								if("integer"!=type2)
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer "<<endl;
+									break;
+								}
+							}
+							else
+							{
+								if("integer"!=assign_pre(p->opr.op[1]->opr.op[0]))
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer"<<endl;
+									while(!stacktype.empty())
+										stacktype.pop();
+									while(!stackint.empty())
+										stackint.pop();
+									id_num=0;
+									break;
+								}
+								while(!stacktype.empty())
+									stacktype.pop();
+								while(!stackint.empty())
+									stackint.pop();
+								id_num=0;
+							}
 						}
+
 							
 						
 						if(p->opr.op[1]->opr.op[1]->type==typeCon)
 						{
+							varintable(varname,symtable,curscope,scope);
 							string type=symtable[scope][varname];
 							int size;
 							varintable(type,symtable,curscope,scope);
@@ -590,24 +683,162 @@ void pre_order(nodeType *p)
 						}
 						else if(p->opr.op[1]->opr.op[1]->type==typeId)
 						{
-							if(varintable(p->opr.op[1]->opr.op[1]->id.s,symtable,curscope,scope)==false)
+							string type2=getidtype(p->opr.op[1]->opr.op[1]->id.s,p->opr.op[1]->opr.op[1]->linenum);
+							if(type2!="integer")
 							{
-								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined: "<<p->opr.op[1]->opr.op[1]->id.s<<endl;
+								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable's type is not ingeter: "<<p->opr.op[1]->opr.op[1]->id.s<<endl;
 								break;
+							}
+						}
+						else if(p->opr.op[1]->opr.op[1]->type==typeOpr)
+						{
+							if(p->opr.op[1]->opr.op[1]->opr.oper==CALLARRAY)
+							{
+								string type2;
+								type2=symtable[curscope.top()][p->opr.op[1]->opr.op[1]->opr.op[0]->id.s];
+								int arraynum=p->opr.op[1]->opr.op[1]->opr.op[1]->opr.nops;
+								if(typeequal("integer",type2,p->opr.op[0]->linenum,0,arraynum)==false)
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer"<<endl;
+									break;
+								}
+							}
+							else if(p->opr.op[1]->opr.op[1]->opr.oper==CALLFUNCTION)
+							{
+								string type2;
+								string funname;
+								string scope;
+								funname=p->opr.op[1]->opr.op[1]->opr.op[0]->id.s;
+								type2=symtable[funname]["return"];
+								if("integer"!=type2)
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer "<<endl;
+									break;
+								}
 							}
 							else
 							{
-								if(symtable[scope][p->opr.op[1]->opr.op[1]->id.s]!="integer")
+								if("integer"!=assign_pre(p->opr.op[1]->opr.op[1]))
 								{
-									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable's type is not ingeter: "<<p->opr.op[1]->opr.op[1]->id.s<<endl;
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer"<<endl;
+									while(!stacktype.empty())
+										stacktype.pop();
+									while(!stackint.empty())
+										stackint.pop();
+									id_num=0;
 									break;
 								}
+								while(!stacktype.empty())
+									stacktype.pop();
+								while(!stackint.empty())
+									stackint.pop();
+								id_num=0;
 							}
 						}
 					}
 					break;
 				}
-				case RETURN: break;
+				case RETURN: 
+				{
+					if(setin==2)
+					{
+						if(p->opr.op[0]->type!=typeId)
+						{
+							cout<<"line: "<<p->linenum<<" the declaration of return cannot be a expression: "<<endl;
+							break;
+						}
+						if(strcmp(p->opr.op[0]->id.s,"integer")==0||strcmp(p->opr.op[0]->id.s,"boolean")==0)
+          				{
+           				 		symtable[curscope.top()]["return"]=p->opr.op[0]->id.s;
+           				}
+           				else
+           				{
+           					stack<string>temstack=curscope;
+           					string scope;
+           				 	if(varintable(p->opr.op[0]->id.s,symtable,temstack,scope)==false)
+           						 cout<<"line: "<<p->linenum<<" this variable's class has not been defined: "<<p->opr.op[0]->id.s<<endl;
+           					else if(isbool(p->opr.op[0]->id.s))
+           						 cout<<"line: "<<p->linenum<<" this variable's name is illegal: "<<p->opr.op[0]->id.s<<endl;
+           					else
+           					{
+           						symtable[curscope.top()]["return"]=p->opr.op[0]->id.s;
+           					}
+           				}
+           			}
+           			else if(setin==4)
+           			{
+           				if(symtable[curscope.top()].find("return")==symtable[curscope.top()].end())
+           				{
+           					cout<<"line: "<<p->linenum<<" this function should not has return value: "<<endl;
+           					break;
+           				}
+
+           				if(p->opr.op[0]->type==typeCon)
+           				{
+           					if(symtable[curscope.top()]["return"]!="integer")
+           					{
+           						cout<<"line: "<<p->opr.op[0]->linenum<<" this function should not return this value: "<<endl;
+           						break;
+           					}
+           				}
+           				else if(p->opr.op[0]->type==typeId)
+						{
+							string type2=getidtype(p->opr.op[0]->id.s,p->linenum);
+							if(typeequal(symtable[curscope.top()]["return"],type2,p->opr.op[0]->linenum,0,0)==false)
+							{
+								cout<<"line: "<<p->opr.op[0]->linenum<<" this function should not return this value"<<endl;
+								break;
+							}
+						}
+						else if(p->opr.op[0]->type==typeOpr)
+						{
+							if(p->opr.op[0]->opr.oper==CALLARRAY)
+							{
+								string type2;
+								type2=symtable[curscope.top()][p->opr.op[0]->opr.op[0]->id.s];
+								int arraynum=p->opr.op[0]->opr.op[1]->opr.nops;
+								if(typeequal(symtable[curscope.top()]["return"],type2,p->opr.op[0]->linenum,0,arraynum)==false)
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this function should not return this value"<<endl;
+									break;
+								}
+							}
+							else if(p->opr.op[0]->opr.oper==CALLFUNCTION)
+							{
+								string type2;
+								string funname;
+								string scope;
+								funname=p->opr.op[0]->opr.op[0]->id.s;
+								type2=symtable[funname]["return"];
+								if(symtable[curscope.top()]["return"]!=type2)
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this function should not return this value "<<type2<<endl;
+									break;
+								}
+							}
+							else
+							{
+								if(symtable[curscope.top()]["return"]!=assign_pre(p->opr.op[0]))
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this function should not return this value"<<endl;
+									while(!stacktype.empty())
+										stacktype.pop();
+									while(!stackint.empty())
+										stackint.pop();
+									id_num=0;
+									break;
+								}
+								while(!stacktype.empty())
+									stacktype.pop();
+								while(!stackint.empty())
+									stackint.pop();
+								id_num=0;
+							}
+						}
+
+           			}
+					break;
+				}
 				case IS:
 				{
 					map<string,int>::iterator iter4;
@@ -676,6 +907,10 @@ void pre_order(nodeType *p)
           			  		{
           			  			cout<<"line: "<<p->opr.op[0]->linenum<<" this function's parameter cannot be a digit: "<<p->opr.op[0]->id.s<<endl;
 								break;
+          			  		}
+          			  		else if(temp->type==typeOpr)
+          			  		{
+          			  			cout<<"line: "<<p->opr.op[0]->linenum<<" this function's parameter cannot be a expression: "<<p->opr.op[0]->id.s<<endl;
           			  		}
           			  		functable[scopename][temp->id.s]=i;
           			  	}
@@ -766,7 +1001,217 @@ void pre_order(nodeType *p)
           			setin=2; 
          			 break;
          		case CALLFUNCTION:
+         		{
+         			string funname=p->opr.op[0]->id.s;
+         			string scope;
+         			if(funname.find(".")==string::npos)
+					{
+         				if(varintable(funname,symtable,curscope,scope)==false)
+         				{
+         					cout<<"line: "<<p->opr.op[0]->linenum<<" this function has not been defined "<<endl;
+         					break;
+         				}
+         				else if(symtable[scope][funname]!="function"&&symtable[scope][funname]!="efunction")
+         				{
+         					cout<<"line: "<<p->opr.op[0]->linenum<<" this function has not been defined "<<endl;
+         					break;
+         				}
+         			}
+         			else
+					{
+						string firvar=funname.substr(0,funname.find("."));
+						string secvar=funname.substr(funname.find(".")+1,funname.size());
+						string firtype;
+						
+						if(varintable(firvar,symtable,curscope,scope)==false)
+							cout<<"line: "<<p->linenum<<" this variable has not been defined: "<<firvar<<endl;
+						else
+						{	
+							firtype=symtable[scope][firvar];
+							if(symtable[firtype].find(secvar)==symtable[firtype].end())
+							{
+								cout<<"line: "<<p->linenum<<" this function has not been defined in class: "<<firtype<<" "<<secvar<<endl;
+								break;
+							}
+							else if(symtable[firtype][secvar]!="function"&&symtable[firtype][secvar]!="efunction")
+							{
+								cout<<"line: "<<p->linenum<<" this function has not been defined in class: "<<firtype<<" "<<secvar<<endl;
+								break;
+							}
+							else
+								funname=firtype+"."+secvar;
+						}
+					}
+
+         			int i=0;
+         			if(p->opr.nops>=2)
+         			{
+         				nodeType *temp=p->opr.op[1];
+         				while(temp->opr.oper==',')
+          				{
+          					i++;
+          					temp=temp->opr.op[0];
+          				}
+          				i++;
+          			}
+          			if(i!=functable[funname].size())
+          				cout<<"line: "<<p->opr.op[0]->linenum<<" this function's parameters' number is wrong"<<endl;
+
+          			i=0;
+          			if(p->opr.nops>=2)
+         			{
+         				nodeType *temp=p->opr.op[1];
+         				while(temp->opr.oper==',')
+          				{
+          					string type1;
+          					map<string,int>::iterator iter4;
+        			 		for(iter4=functable[funname].begin();iter4!=functable[funname].end();++iter4)
+        			 		{
+         			   			if(iter4->second==i)
+         			   				type1=symtable[funname][iter4->first];
+         			   		}
+
+          			 	 	if(temp->opr.op[1]->type==typeCon)
+          			 	 	{
+         			   			if(type1!="integer")
+         			   			{
+         			   				cout<<"line: "<<p->opr.op[0]->linenum<<" this function's parameters' cannot be fitted"<<endl;
+         			   				break;
+         			   			}
+          			  		}
+          			  		else if(temp->opr.op[1]->type==typeId)
+          			  		{
+          			  			string type2=getidtype(temp->opr.op[1]->id.s,temp->opr.op[1]->linenum);
+								if(type1!=type2)
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this function's parameters' cannot be fitted"<<endl;
+									break;
+								}
+          				  	}
+          				  	else if(temp->opr.op[1]->type==typeOpr)
+          				  	{
+          				  		if(temp->opr.op[1]->opr.oper==CALLARRAY)
+								{
+									string type2;
+									type2=symtable[curscope.top()][temp->opr.op[1]->opr.op[0]->id.s];
+									int arraynum=temp->opr.op[1]->opr.op[1]->opr.nops;
+									if(typeequal(type1,type2,temp->opr.op[1]->linenum,0,arraynum)==false)
+									{
+										cout<<"line: "<<p->opr.op[1]->linenum<<" this function's parameters' cannot be fitted"<<endl;
+										break;
+									}
+								}
+								else if(temp->opr.op[1]->opr.oper==CALLFUNCTION)
+								{
+									string type2;
+									string funname;
+									string scope;
+									funname=temp->opr.op[1]->opr.op[0]->id.s;
+									type2=symtable[funname]["return"];
+									if(type1!=type2)
+									{
+										cout<<"line: "<<temp->opr.op[1]->linenum<<" this function's parameters' cannot be fitted"<<endl;
+										break;
+									}
+								}
+								else
+								{
+									if(type1!=assign_pre(temp->opr.op[1]))
+									{
+										cout<<"line: "<<temp->opr.op[1]->linenum<<" this function's parameters' cannot be fitted"<<endl;
+										while(!stacktype.empty())
+										stacktype.pop();
+										while(!stackint.empty())
+										stackint.pop();
+										id_num=0;
+										break;
+									}
+									while(!stacktype.empty())
+										stacktype.pop();
+									while(!stackint.empty())
+										stackint.pop();
+									id_num=0;
+								}
+          				  	}
+          			 	 	temp=temp->opr.op[0];
+          			  		i++;
+          			  
+          			  	}
+
+          			  		string type1;
+          					map<string,int>::iterator iter4;
+        			 		for(iter4=functable[funname].begin();iter4!=functable[funname].end();++iter4)
+        			 		{
+         			   			if(iter4->second==i)
+         			   				type1=symtable[funname][iter4->first];
+         			   		}
+
+          			 	 	if(temp->type==typeCon)
+          			 	 	{
+         			   			if(type1!="integer")
+         			   			{
+         			   				cout<<"line: "<<temp->linenum<<" this function's parameters' cannot be fitted"<<endl;
+         			   				break;
+         			   			}
+          			  		}
+          			  		else if(temp->type==typeId)
+          			  		{
+          			  			string type2=getidtype(temp->id.s,temp->linenum);
+								if(type1!=type2)
+								{
+									cout<<"line: "<<temp->linenum<<" this function's parameters' cannot be fitted"<<endl;
+									break;
+								}
+          				  	}
+          				  	else if(temp->type==typeOpr)
+          				  	{
+          				  		if(temp->opr.oper==CALLARRAY)
+								{
+									string type2;
+									type2=symtable[curscope.top()][temp->opr.op[0]->id.s];
+									int arraynum=temp->opr.op[1]->opr.nops;
+									if(typeequal(type1,type2,temp->linenum,0,arraynum)==false)
+									{
+										cout<<"line: "<<p->linenum<<" this function's parameters' cannot be fitted"<<endl;
+										break;
+									}
+								}
+								else if(temp->opr.oper==CALLFUNCTION)
+								{
+									string type2;
+									string funname;
+									string scope;
+									funname=temp->opr.op[0]->id.s;
+									type2=symtable[funname]["return"];
+									if(type1!=type2)
+									{
+										cout<<"line: "<<temp->linenum<<" this function's parameters' cannot be fitted"<<endl;
+										break;
+									}
+								}
+								else
+								{
+									if(type1!=assign_pre(temp))
+									{
+										cout<<"line: "<<temp->linenum<<" this function's parameters' cannot be fitted"<<endl;
+										while(!stacktype.empty())
+										stacktype.pop();
+										while(!stackint.empty())
+										stackint.pop();
+										id_num=0;
+										break;
+									}
+									while(!stacktype.empty())
+										stacktype.pop();
+									while(!stackint.empty())
+										stackint.pop();
+									id_num=0;
+								}
+          				  	}
+
+          			}
          			break;
+         		}
 				case PRINT:s = "print";break;
 				case ';':s = "[;]";break;
 				case ',':
@@ -868,46 +1313,39 @@ void pre_order(nodeType *p)
 						}
 						case typeOpr:
 						{
-							string scope;
-							input=p->opr.op[1]->opr.op[0]->id.s;
-							if(input.find(".")!=string::npos)
+							string type2;
+							if(p->opr.op[1]->opr.op[1]->opr.oper==XIABIAO)
 							{
-								string firvar=input.substr(0,input.find("."));
-								string secvar=input.substr(input.find(".")+1,input.size());
-								string firtype;
-								string scope;
-						
-								if(varintable(firvar,symtable,curscope,scope)==false)
-									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined: "<<firvar<<endl;
-								else
-								{	
-									firtype=symtable[scope][firvar];
-									if(symtable[firtype].find(secvar)==symtable[firtype].end())
-										cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined in class: "<<firtype<<" "<<secvar<<endl;
-									else if(symtable[firtype][secvar]=="function")
-										cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined in class: "<<firtype<<" "<<secvar<<endl;
-									else
-									{
-										string type2=symtable[firtype][secvar];
-										int arraynum=0;
-										if(typeequal(type,type2,p->opr.op[0]->linenum,0,arraynum)==false)
-											cout<<"line: "<<p->opr.op[0]->linenum<<" this value can not be setted to this variable ||type: "<<type<<" value: "<<input<<endl;
-									}
-								}
-							}
-							else if(varintable(p->opr.op[1]->opr.op[0]->id.s,symtable,curscope,scope)==false)
-								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined: "<<input<<endl;
-							else
-							{
-
-								string type2=symtable[scope][p->opr.op[1]->opr.op[0]->id.s];
-								int arraynum=0;
-								if(p->opr.op[1]->opr.op[1]->opr.oper==XIABIAO)
-									arraynum=p->opr.op[1]->opr.op[1]->opr.nops;
-								
+								type2=symtable[curscope.top()][p->opr.op[1]->opr.op[0]->id.s];
+								int arraynum=p->opr.op[1]->opr.op[1]->opr.nops;
 								if(typeequal(type,type2,p->opr.op[0]->linenum,0,arraynum)==false)
 									cout<<"line: "<<p->opr.op[0]->linenum<<" this value can not be setted to this variable ||type: "<<type<<" value: "<<input<<endl;
 							}
+							else if(p->opr.op[1]->opr.op[0]->opr.oper==CALLFUNCTION)
+							{
+								string type2;
+								string funname;
+								string scope;
+								funname=p->opr.op[1]->opr.op[0]->opr.op[0]->id.s;
+								type2=symtable[funname]["return"];
+								if(type!=type2)
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this value can not be setted to this variable ||type: "<<type<<" value: "<<input<<endl;
+									break;
+								}
+							}
+							else
+							{	
+								if(type!=assign_pre(p->opr.op[1]))
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this value can not be setted to this variable ||type: "<<assign_pre(p->opr.op[1])<<" value: "<<input<<endl;
+								while(!stacktype.empty())
+									stacktype.pop();
+								while(!stackint.empty())
+									stackint.pop();
+								id_num=0;
+
+							}
+							break;
 						}
 						
 
@@ -916,6 +1354,7 @@ void pre_order(nodeType *p)
 				}
 				case ARRAYASIGN:
 				{
+
 					string varname=p->opr.op[0]->id.s;
 					string scope;
 					string type1;
@@ -959,21 +1398,59 @@ void pre_order(nodeType *p)
 						}
 						else if(p->opr.op[1]->opr.op[0]->type==typeId)
 						{
-							if(varintable(p->opr.op[1]->opr.op[0]->id.s,symtable,curscope,scope)==false)
+							string type2=getidtype(p->opr.op[1]->opr.op[0]->id.s,p->opr.op[1]->opr.op[0]->linenum);
+							if(type2!="integer")
 							{
-								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined: "<<p->opr.op[1]->opr.op[0]->id.s<<endl;
+								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable's type is not ingeter: "<<p->opr.op[1]->opr.op[0]->id.s<<endl;
 								break;
 							}
-							else
+						}
+						else if(p->opr.op[1]->opr.op[0]->type==typeOpr)
+						{
+							if(p->opr.op[1]->opr.op[0]->opr.oper==CALLARRAY)
 							{
-								if(symtable[scope][p->opr.op[1]->opr.op[0]->id.s]!="integer")
+								string type2;
+								type2=symtable[curscope.top()][p->opr.op[1]->opr.op[0]->opr.op[0]->id.s];
+								int arraynum=p->opr.op[1]->opr.op[0]->opr.op[1]->opr.nops;
+								if(typeequal("integer",type2,p->opr.op[0]->linenum,0,arraynum)==false)
 								{
-									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable's type is not integer: "<<p->opr.op[1]->opr.op[0]->id.s<<endl;
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer"<<endl;
 									break;
 								}
 							}
+							else if(p->opr.op[1]->opr.op[0]->opr.oper==CALLFUNCTION)
+							{
+								string type2;
+								string funname;
+								string scope;
+								funname=p->opr.op[1]->opr.op[0]->opr.op[0]->id.s;
+								type2=symtable[funname]["return"];
+								if("integer"!=type2)
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer "<<endl;
+									break;
+								}
+							}
+							else
+							{
+								if("integer"!=assign_pre(p->opr.op[1]->opr.op[0]))
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer"<<endl;
+									while(!stacktype.empty())
+										stacktype.pop();
+									while(!stackint.empty())
+										stackint.pop();
+									id_num=0;
+									break;
+								}
+								while(!stacktype.empty())
+									stacktype.pop();
+								while(!stackint.empty())
+									stackint.pop();
+								id_num=0;
+							}
 						}
-						
+						type1=type;
 					}
 					else if(p->opr.op[1]->opr.nops==2)
 					{
@@ -1014,20 +1491,59 @@ void pre_order(nodeType *p)
 						}
 						else if(p->opr.op[1]->opr.op[0]->type==typeId)
 						{
-							if(varintable(p->opr.op[1]->opr.op[0]->id.s,symtable,curscope,scope)==false)
+							string type2=getidtype(p->opr.op[1]->opr.op[0]->id.s,p->opr.op[1]->opr.op[0]->linenum);
+							if(type2!="integer")
 							{
-								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined: "<<p->opr.op[1]->opr.op[0]->id.s<<endl;
+								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable's type is not ingeter: "<<p->opr.op[1]->opr.op[0]->id.s<<endl;
 								break;
 							}
-							else
+						}
+						else if(p->opr.op[1]->opr.op[0]->type==typeOpr)
+						{
+							if(p->opr.op[1]->opr.op[0]->opr.oper==CALLARRAY)
 							{
-								if(symtable[scope][p->opr.op[1]->opr.op[0]->id.s]!="integer")
+								string type2;
+								type2=symtable[curscope.top()][p->opr.op[1]->opr.op[0]->opr.op[0]->id.s];
+								int arraynum=p->opr.op[1]->opr.op[0]->opr.op[1]->opr.nops;
+								if(typeequal("integer",type2,p->opr.op[0]->linenum,0,arraynum)==false)
 								{
-									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable's type is not integer: "<<p->opr.op[1]->opr.op[0]->id.s<<endl;
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer"<<endl;
 									break;
 								}
 							}
+							else if(p->opr.op[1]->opr.op[0]->opr.oper==CALLFUNCTION)
+							{
+								string type2;
+								string funname;
+								string scope;
+								funname=p->opr.op[1]->opr.op[0]->opr.op[0]->id.s;
+								type2=symtable[funname]["return"];
+								if("integer"!=type2)
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer "<<endl;
+									break;
+								}
+							}
+							else
+							{
+								if("integer"!=assign_pre(p->opr.op[1]->opr.op[0]))
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer"<<endl;
+									while(!stacktype.empty())
+										stacktype.pop();
+									while(!stackint.empty())
+										stackint.pop();
+									id_num=0;
+									break;
+								}
+								while(!stacktype.empty())
+									stacktype.pop();
+								while(!stackint.empty())
+									stackint.pop();
+								id_num=0;
+							}
 						}
+
 						
 							varintable(type,symtable,curscope,scope);
 							getarrayinfo(symtable[scope][type],size,type);
@@ -1042,21 +1558,59 @@ void pre_order(nodeType *p)
 						}
 						else if(p->opr.op[1]->opr.op[1]->type==typeId)
 						{
-							if(varintable(p->opr.op[1]->opr.op[1]->id.s,symtable,curscope,scope)==false)
+							string type2=getidtype(p->opr.op[1]->opr.op[1]->id.s,p->opr.op[1]->opr.op[1]->linenum);
+							if(type2!="integer")
 							{
-								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined: "<<p->opr.op[1]->opr.op[1]->id.s<<endl;
+								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable's type is not ingeter: "<<p->opr.op[1]->opr.op[1]->id.s<<endl;
 								break;
+							}
+						}
+						else if(p->opr.op[1]->opr.op[1]->type==typeOpr)
+						{
+							if(p->opr.op[1]->opr.op[1]->opr.oper==CALLARRAY)
+							{
+								string type2;
+								type2=symtable[curscope.top()][p->opr.op[1]->opr.op[1]->opr.op[0]->id.s];
+								int arraynum=p->opr.op[1]->opr.op[1]->opr.op[1]->opr.nops;
+								if(typeequal("integer",type2,p->opr.op[0]->linenum,0,arraynum)==false)
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer"<<endl;
+									break;
+								}
+							}
+							else if(p->opr.op[1]->opr.op[1]->opr.oper==CALLFUNCTION)
+							{
+								string type2;
+								string funname;
+								string scope;
+								funname=p->opr.op[1]->opr.op[1]->opr.op[0]->id.s;
+								type2=symtable[funname]["return"];
+								if("integer"!=type2)
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer "<<endl;
+									break;
+								}
 							}
 							else
 							{
-								if(symtable[scope][p->opr.op[1]->opr.op[1]->id.s]!="integer")
+								if("integer"!=assign_pre(p->opr.op[1]->opr.op[1]))
 								{
-									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable's type is not integer: "<<p->opr.op[1]->opr.op[1]->id.s<<endl;
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable is not a integer"<<endl;
+									while(!stacktype.empty())
+										stacktype.pop();
+									while(!stackint.empty())
+										stackint.pop();
+									id_num=0;
 									break;
 								}
-								type1=type;
+								while(!stacktype.empty())
+									stacktype.pop();
+								while(!stackint.empty())
+									stackint.pop();
+								id_num=0;
 							}
 						}
+						type1=type;
 						
 					}
 
@@ -1070,7 +1624,7 @@ void pre_order(nodeType *p)
 						{
 							string scope;
 							string input=p->opr.op[2]->id.s;
-							if(isbool(p->opr.op[2]->id.s))
+							if(isbool(input))
 							{	
 								if(type1!="boolean")
 								{
@@ -1099,7 +1653,7 @@ void pre_order(nodeType *p)
 										string type2=symtable[firtype][secvar];
 										int arraynum=0;
 										
-										if(typeequal(type1,type2,p->opr.op[0]->linenum,arraynum1,arraynum)==false)
+										if(typeequal(type1,type2,p->opr.op[0]->linenum,0,arraynum)==false)
 											cout<<"line: "<<p->opr.op[0]->linenum<<" this value can not be setted to this variable ||type: "<<type1<<" value: "<<input<<endl;
 									}
 								}
@@ -1113,58 +1667,53 @@ void pre_order(nodeType *p)
 
 								string type2=symtable[scope][p->opr.op[2]->id.s];
 								int arraynum2=0;
-								if(typeequal(type1,type2,p->opr.op[0]->linenum,arraynum1,arraynum2)==false)
+								if(typeequal(type1,type2,p->opr.op[0]->linenum,0,arraynum2)==false)
 									cout<<"line: "<<p->opr.op[0]->linenum<<" this value can not be setted to this variable ||type: "<<type1<<" value: "<<p->opr.op[2]->id.s<<endl;
 							}
 							break;
 						}
 						case typeOpr:
 						{
-							string scope;
-							string input=p->opr.op[2]->opr.op[0]->id.s;
-							if(input.find(".")!=string::npos)
-							{
-								string firvar=input.substr(0,input.find("."));
-								string secvar=input.substr(input.find(".")+1,input.size());
-								string firtype;
-								string scope;
-						
-								if(varintable(firvar,symtable,curscope,scope)==false)
-									cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined: "<<firvar<<endl;
-								else
-								{	
-									firtype=symtable[scope][firvar];
-									if(symtable[firtype].find(secvar)==symtable[firtype].end())
-										cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined in class: "<<firtype<<" "<<secvar<<endl;
-									else if(symtable[firtype][secvar]=="function")
-										cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined in class: "<<firtype<<" "<<secvar<<endl;
-									else
-									{
-										string type2=symtable[firtype][secvar];
-										int arraynum2=0;
-										if(typeequal(type1,type2,p->opr.op[0]->linenum,arraynum1,arraynum2)==false)
-											cout<<"line: "<<p->opr.op[0]->linenum<<" this value can not be setted to this variable ||type: "<<type1<<" value: "<<input<<endl;
-									}
-								}
-							}
-							else if(varintable(p->opr.op[2]->opr.op[0]->id.s,symtable,curscope,scope)==false)
-								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined: "<<input<<endl;
-							else
-							{
+							string type2;
 
-								string type2=symtable[scope][p->opr.op[2]->opr.op[0]->id.s];
-								int arraynum=0;
-								if(p->opr.op[2]->opr.op[1]->opr.oper==XIABIAO)
-									arraynum=p->opr.op[2]->opr.op[1]->opr.nops;
-								
-								if(typeequal(type1,type2,p->opr.op[0]->linenum,arraynum1,arraynum)==false)
+							if(p->opr.op[2]->opr.op[1]->opr.oper==XIABIAO)
+							{
+								type2=symtable[curscope.top()][p->opr.op[2]->opr.op[0]->id.s];
+								string input=p->opr.op[0]->id.s;
+								int arraynum=p->opr.op[2]->opr.op[1]->opr.nops;
+								if(typeequal(type1,type2,p->opr.op[0]->linenum,0,arraynum)==false)
 									cout<<"line: "<<p->opr.op[0]->linenum<<" this value can not be setted to this variable ||type: "<<type1<<" value: "<<input<<endl;
 							}
+							else if(p->opr.op[2]->opr.op[0]->opr.oper==CALLFUNCTION)
+							{
+								string type2;
+								string funname;
+								string scope;
+								string input=p->opr.op[0]->id.s;
+								funname=p->opr.op[2]->opr.op[0]->opr.op[0]->id.s;
+								type2=symtable[funname]["return"];
+								if(typeequal(type1,type2,p->opr.op[0]->linenum,0,0)==false)
+								{
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this value can not be setted to this variable ||type: "<<type1<<" value: "<<input<<endl;
+									break;
+								}
+							}
+							else
+							{	
+								string input=p->opr.op[0]->id.s;
+								if(type1!=assign_pre(p->opr.op[2]))
+									cout<<"line: "<<p->opr.op[0]->linenum<<" this value can not be setted to this variable ||type: "<<type1<<" value: "<<input<<endl;
+								while(!stacktype.empty())
+									stacktype.pop();
+								while(!stackint.empty())
+									stackint.pop();
+								id_num=0;
+							}
+							break;
 						}
 						
 
 					}
-					
 
 
 					break;
@@ -1172,67 +1721,6 @@ void pre_order(nodeType *p)
 				case UMINUS:s = "[_]";break;
 				case '+': case '-': case '*': case '/': case '%': case '<': case '>':case GE: case LE: case NE: case EQ: 
 				{
-					/*if()
-					string input1=p->opr.op[0]->id.s;
-					string input2=p->opr.op[1]->id.s;
-           			string type1,type2;
-           			if(input1.find(".")==string::npos)
-           			{
-           				string scope;
-						if(varintable(input1,symtable,curscope,scope)==false)
-							cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined: "<<p->opr.op[0]->id.s<<endl;
-						else
-							type1=symtable[scope][p->opr.op[0]->id.s];
-					}
-					else
-					{
-						string firvar=input1.substr(0,input1.find("."));
-						string secvar=input1.substr(input1.find(".")+1,input1.size());
-						string firtype;
-						string scope;
-						
-						if(varintable(firvar,symtable,curscope,scope)==false)
-							cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined: "<<firvar<<endl;
-						else
-						{	
-							firtype=symtable[scope][firvar];
-							if(symtable[firtype].find(secvar)==symtable[firtype].end())
-								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined in class: "<<firtype<<" "<<secvar<<endl;
-							else if(symtable[firtype][secvar]=="function")
-								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined in class: "<<firtype<<" "<<secvar<<endl;
-							else
-								type1=symtable[firtype][secvar];
-						}
-					}
-					if(input2.find(".")==string::npos)
-           			{
-           				string scope;
-						if(varintable(input2,symtable,curscope,scope)==false)
-							cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined: "<<p->opr.op[0]->id.s<<endl;
-						else
-							type2=symtable[scope][p->opr.op[1]->id.s];
-					}
-					else
-					{
-						string firvar=input2.substr(0,input2.find("."));
-						string secvar=input2.substr(input2.find(".")+1,input2.size());
-						string firtype;
-						string scope;
-						
-						if(varintable(firvar,symtable,curscope,scope)==false)
-							cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined: "<<firvar<<endl;
-						else
-						{	
-							firtype=symtable[scope][firvar];
-							if(symtable[firtype].find(secvar)==symtable[firtype].end())
-								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined in class: "<<firtype<<" "<<secvar<<endl;
-							else if(symtable[firtype][secvar]=="function")
-								cout<<"line: "<<p->opr.op[0]->linenum<<" this variable has not been defined in class: "<<firtype<<" "<<secvar<<endl;
-							else
-								type2=symtable[firtype][secvar];
-						}
-					}
-					cout<<type1<<" "<<type2<<endl;*/
 					break;
 				}
 				case AND:s = "[AND]";break;
@@ -1271,12 +1759,15 @@ void pre_order(nodeType *p)
 				case FUNCTION:
 				{
 					setin=0;
+					if(functable[curscope.top()].find("return")!=functable[curscope.top()].end())
+						if(symtable[curscope.top()].find("return")==symtable[curscope.top()].end())
+							cout<<"line: "<<p->opr.op[0]->linenum<<" this function should has a return value"<<endl;
+
 					curscope.pop();
 					break;
 				}
 				case CLASS:
 				{
-					
 					curscope.pop();
 					break;
 				}
@@ -1307,9 +1798,9 @@ bool varintable(string varname,map<string,map<string,string> >symtable,stack<str
 	}
 	return false;
 }
-bool isbool(char* varname)
+bool isbool(string varname)
 {
-	if(strcmp(varname,"yes")==0||strcmp(varname,"no")==0)
+	if(varname=="yes"||varname=="no")
 		return true;
 	else 
 		return false;
@@ -1330,7 +1821,7 @@ bool typeequal(string type1,string type2,int linenum,int arraynum1,int arraynum2
 			if(type1!="integer"&&type1!="boolean")
 			{
 				varintable(type1,symtable,curscope,scope1);
-				if(symtable[scope1][type1].find("array"&&arraynum1>0)!=string::npos)
+				if(symtable[scope1][type1].find("array")!=string::npos&&arraynum1>0)
 					getarrayinfo(symtable[scope1][type1],size1,type1);
 			}
 		}
@@ -1372,4 +1863,220 @@ void getarrayinfo(string s,int& size,string& type)
 	ss<<s.substr(0,s.find("array"));
 	ss>>size;
 	type=s.substr(s.find("of")+3,s.size());
+}
+
+string assign_pre(nodeType *p)
+{                  
+
+	if(p!=NULL)
+	{
+
+		char *s;
+		string str;
+		switch(p->type)
+		{
+			case typeCon:
+				char word[20];
+				sprintf(word,"%d",p->con.value);
+				s=word;
+				str = "integer";
+				stackint.push(str);
+				stacktype.push(1);
+				id_num++;  
+				break;
+			case typeId:
+			{
+
+				s = p->id.s;
+				str=s;
+				if(str=="yes"||str=="no")
+					str="boolean";
+				else
+				{
+					string scope;
+					varintable(str,symtable,curscope,scope);
+					str=symtable[scope][s];
+				}
+				stackint.push(str);
+				stacktype.push(2);
+				id_num++;
+				break;
+			}
+			case typeOpr:
+			{
+				if(p->opr.oper==CALLARRAY)
+				{
+					int arraynum1=p->opr.op[1]->opr.nops;
+					string scope1;
+					string type1=symtable[curscope.top()][p->opr.op[0]->id.s];
+					varintable(type1,symtable,curscope,scope1);
+					
+					if(symtable[scope1][type1].find("array")!=string::npos&&arraynum1>0)
+					{
+						int size1;
+						arraynum1--;
+						getarrayinfo(symtable[scope1][type1],size1,type1);
+						varintable(type1,symtable,curscope,scope1);
+						if(symtable[scope1][type1].find("array")!=string::npos&&arraynum1>0)
+							getarrayinfo(symtable[scope1][type1],size1,type1);
+						
+					}
+					str=type1;
+					stacktype.push(2);
+					stackint.push(str);	
+					id_num++;
+					break;
+				}
+				else if(p->opr.oper==CALLFUNCTION)
+				{
+					string type2;
+					string funname;
+					string scope;
+					funname=p->opr.op[0]->id.s;
+
+					type2=symtable[funname]["return"];
+
+					str=type2;
+					stacktype.push(2);
+					stackint.push(str);	
+					id_num++;
+					break;
+				}
+				else
+				{
+					switch(p->opr.oper)
+					{
+						case '+':s = "[+]";break;
+						case '-':s = "[-]";break;
+						case '*':s = "[*]";break;
+						case '/':s = "[/]";break;
+						case '%':s = "[%]";break;
+						case '>':s = "[>]";break;
+						case '<':s = "[<]";break;
+						case 'GE':s = "[<=]";break;
+						case 'LE':s = "[>=]";break;
+						case 'NE':s = "[!=]";break;
+						case 'EQ':s = "[==]";break;
+						case 'AND':s = "[&&]";break;
+						case 'OR':s = "[||]";break;
+					}
+					id_num = 0;
+					str =s;
+					stacktype.push (3);
+					stackint.push(str);	
+					break;
+				}
+			}
+				
+		}	
+		while(id_num == 2)
+		{
+			string s1,s2,s3;
+			string ans;
+			s1 = stackint.top();
+			stackint.pop();
+			s2 = stackint.top();
+			stackint.pop();
+			s3 = stackint.top();
+			stackint.pop();
+
+			string outcome;
+			stacktype.pop();
+			stacktype.pop();
+			if(stacktype.top() == 3)
+			{
+				
+				if((s3=="[+]"||s3=="[*]")||(s3=="[-]"||s3=="[/]"))
+				{
+					if(s1!="integer"||s2!="integer")
+					{
+						cout<<"line: "<<p->linenum<<" this operation cannot be setted between there: "<<s1<<" "<<s2<<endl;
+						break;
+					}
+					outcome="integer";
+				}
+				else if(s3=="[<]"||s3=="[>]"||s3=="[<=]"||s3=="[>=]"||s3=="[!=]"||s3=="[==]") 
+				{
+					if(s1!="integer"||s2!="integer")
+					{
+						cout<<"line: "<<p->linenum<<" this operation cannot be setted between there: "<<s1<<" "<<s2<<endl;
+						break;
+					}
+					outcome="boolean";
+				}
+				else if(s3=="[&&]"||s3=="[||]")
+				{
+					if(s1!="boolean"||s2!="boolean")
+					{
+						cout<<"line: "<<p->linenum<<" this operation cannot be setted between there: "<<s1<<" "<<s2;
+						break;
+					}
+					outcome="boolean";
+				}
+			}
+			stacktype.pop();
+			stackint.push(outcome);
+			curtype=outcome;
+			if(!stacktype.empty())
+			{	
+				int s = stacktype.top();
+				if(s == 1 || s == 2)
+					id_num = 1;
+				else
+					id_num = 0;
+			}
+			stacktype.push(2);
+			id_num ++;
+		}
+
+		if(p->opr.oper!=CALLARRAY&&p->opr.oper!=CALLFUNCTION)
+		{
+			for(int i=0;i<p->opr.nops;i++)
+				assign_pre(p->opr.op[i]);
+		}
+	}
+
+	return curtype;
+}
+
+string getidtype(string id,int linenum)
+{
+	string scope;
+	string input=id;
+	string type2;
+	if(isbool(input))
+	{	
+		return "boolean";
+	}
+	else if(input.find(".")!=string::npos)
+	{
+		string firvar=input.substr(0,input.find("."));
+		string secvar=input.substr(input.find(".")+1,input.size());
+		string firtype;
+		string scope;
+						
+		if(varintable(firvar,symtable,curscope,scope)==false)
+			cout<<"line: "<<linenum<<" this variable has not been defined: "<<firvar<<endl;
+		else
+		{	
+			firtype=symtable[scope][firvar];
+			if(symtable[firtype].find(secvar)==symtable[firtype].end())
+				cout<<"line: "<<linenum<<" this variable has not been defined in class: "<<firtype<<" "<<secvar<<endl;
+			else if(symtable[firtype][secvar]=="function")
+				cout<<"line: "<<linenum<<" this variable has not been defined in class: "<<firtype<<" "<<secvar<<endl;
+			else
+			{
+				type2=symtable[firtype][secvar];
+			}
+		}
+	}
+	else if(varintable(input,symtable,curscope,scope)==false)
+		{
+			cout<<"line: "<<linenum<<" this variable has not been defined: "<<input<<endl;
+		}	
+	else
+		{
+			type2=symtable[scope][input];
+		}
+		return type2;
 }
